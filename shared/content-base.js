@@ -6,6 +6,12 @@ class ContentFilterBase {
         this.scrollTimeout = null;
         this.isScrollProcessing = false;
         this.currentTopics = null;
+        this.isFilteringActive = false;
+        this.stats = {
+            total: 0,
+            shown: 0,
+            filtered: 0
+        };
     }
 
     blurElement(container, title) {
@@ -15,6 +21,9 @@ class ContentFilterBase {
             container.style.opacity = '0.6';
             container.style.pointerEvents = 'none';
             container.title = `Filtered: ${title}`;
+            this.stats.filtered++;
+            this.stats.total++;
+            this.sendStatsToPopup();
             console.log('✅ Smart Content Filter: Blurred and desaturated element:', title);
         } else {
             console.log('⚠️ DEBUG: Element already filtered:', title);
@@ -29,6 +38,9 @@ class ContentFilterBase {
         container.style.setProperty('outline', '3px solid #ff69b4', 'important');
         container.style.setProperty('outline-offset', '1px', 'important');
         container.title = 'Allowed: Element kept';
+        this.stats.shown++;
+        this.stats.total++;
+        this.sendStatsToPopup();
     }
 
     async processElementsBatch(elements, topics, elementType = 'video') {
@@ -152,15 +164,83 @@ class ContentFilterBase {
         console.log('📜 DEBUG: Scroll monitoring stopped');
     }
 
+    sendStatsToPopup() {
+        try {
+            chrome.runtime.sendMessage({
+                action: 'updateStats',
+                stats: this.stats
+            });
+        } catch (error) {
+            console.log('Could not send stats to popup:', error);
+        }
+    }
+
+    resetStats() {
+        this.stats = {
+            total: 0,
+            shown: 0,
+            filtered: 0
+        };
+        this.sendStatsToPopup();
+    }
+
+    stopFiltering() {
+        console.log('🛑 DEBUG: Stopping filtering');
+        this.isFilteringActive = false;
+        this.stopScrollMonitoring();
+    }
+
+    async autoStartFiltering(processElementsFunction, startScrollMonitoringFunction) {
+        try {
+            const result = await chrome.storage.local.get(['allowedTopics']);
+            const topics = result.allowedTopics || [];
+            
+            if (topics.length > 0) {
+                console.log('🚀 DEBUG: Auto-starting filtering with topics:', topics);
+                this.isFilteringActive = true;
+                this.resetStats();
+                processElementsFunction(topics);
+                startScrollMonitoringFunction(topics);
+                
+                chrome.runtime.sendMessage({
+                    action: 'filteringStarted',
+                    topics: topics
+                });
+            }
+        } catch (error) {
+            console.error('Error auto-starting filtering:', error);
+        }
+    }
+
     setupMessageListener(processElementsFunction, startScrollMonitoringFunction) {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.log('📨 DEBUG: Message received in content script:', request);
             
             if (request.action === 'startFiltering') {
                 console.log('🚀 DEBUG: Starting filtering with topics:', request.topics);
+                this.isFilteringActive = true;
+                this.resetStats();
                 processElementsFunction(request.topics);
                 startScrollMonitoringFunction(request.topics);
                 sendResponse({ success: true });
+            }
+            
+            if (request.action === 'stopFiltering') {
+                console.log('🛑 DEBUG: Stopping filtering');
+                this.stopFiltering();
+                sendResponse({ success: true });
+            }
+            
+            if (request.action === 'getStats') {
+                sendResponse({ stats: this.stats });
+            }
+            
+            if (request.action === 'getFilteringState') {
+                sendResponse({ 
+                    isActive: this.isFilteringActive,
+                    topics: this.currentTopics,
+                    stats: this.stats
+                });
             }
             
             return true;

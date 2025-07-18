@@ -92,7 +92,14 @@ class YouTubeContentFilter extends ContentFilterBase {
             (topics) => this.startScrollMonitoring(topics, () => this.extractVideoElements(), 'video')
         );
 
-        console.log('🔍 Smart Content Filter: Ready for YouTube filtering with scroll support. Use the popup to start!');
+        setTimeout(() => {
+            this.autoStartFiltering(
+                (topics) => this.processVideosForFiltering(topics),
+                (topics) => this.startScrollMonitoring(topics, () => this.extractVideoElements(), 'video')
+            );
+        }, 1000);
+
+        console.log('🔍 Smart Content Filter: Ready for YouTube filtering with auto-start support!');
     }
 }
 
