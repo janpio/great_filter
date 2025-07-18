@@ -1,49 +1,103 @@
-// API key loaded from config.js
 const OPENROUTER_API_KEY = CONFIG.OPENROUTER_API_KEY;
 
 document.addEventListener('DOMContentLoaded', function() {
-    const factButton = document.getElementById('factButton');
+    const topicsTextarea = document.getElementById('topics');
+    const saveButton = document.getElementById('saveButton');
+    const savedMessage = document.getElementById('savedMessage');
+    const statusDiv = document.getElementById('status');
+    const filterButton = document.getElementById('filterButton');
+    const filterMessage = document.getElementById('filterMessage');
 
-    // Random fact button
-    factButton.addEventListener('click', async function() {
-        if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY === '__OPENROUTER_API_KEY__') {
-            alert('Please build the extension first: node build.js');
+    loadSavedTopics();
+
+    filterButton.addEventListener('click', async function() {
+        const topicsText = topicsTextarea.value.trim();
+        const topics = topicsText.split('\n').filter(topic => topic.trim() !== '').map(topic => topic.trim());
+        
+        if (topics.length === 0) {
+            alert('Please enter at least one topic before filtering');
             return;
         }
 
-        factButton.textContent = 'Loading...';
-        factButton.disabled = true;
-
         try {
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'google/gemini-2.5-flash-lite-preview-06-17',
-                    messages: [
-                        {
-                            role: 'user',
-                            content: 'Give me one interesting random fact in 1-2 sentences.'
-                        }
-                    ]
-                })
-            });
-
-            const data = await response.json();
+            await chrome.storage.local.set({ allowedTopics: topics });
             
-            if (data.choices && data.choices[0]) {
-                alert(data.choices[0].message.content);
-            } else {
-                alert('Error: ' + (data.error?.message || 'Unknown error'));
+            const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+            if (tabs[0]) {
+                await chrome.tabs.sendMessage(tabs[0].id, {
+                    action: 'startFiltering',
+                    topics: topics
+                });
+                
+                filterMessage.style.display = 'block';
+                setTimeout(() => {
+                    filterMessage.style.display = 'none';
+                }, 5000);
             }
         } catch (error) {
-            alert('Error: ' + error.message);
-        } finally {
-            factButton.textContent = 'Get Random Fact';
-            factButton.disabled = false;
+            console.error('Error starting filter:', error);
+            alert('Error starting filter. Make sure you are on YouTube: ' + error.message);
         }
     });
+
+    saveButton.addEventListener('click', async function() {
+        const topicsText = topicsTextarea.value.trim();
+        const topics = topicsText.split('\n').filter(topic => topic.trim() !== '').map(topic => topic.trim());
+        
+        if (topics.length === 0) {
+            alert('Please enter at least one topic');
+            return;
+        }
+
+        try {
+            await chrome.storage.local.set({ 
+                allowedTopics: topics 
+            });
+            
+            savedMessage.style.display = 'block';
+            setTimeout(() => {
+                savedMessage.style.display = 'none';
+            }, 3000);
+            
+            updateStatus();
+            
+            console.log('Topics saved:', topics);
+        } catch (error) {
+            console.error('Error saving topics:', error);
+            alert('Error saving topics: ' + error.message);
+        }
+    });
+
+    async function loadSavedTopics() {
+        try {
+            const result = await chrome.storage.local.get(['allowedTopics']);
+            if (result.allowedTopics && result.allowedTopics.length > 0) {
+                topicsTextarea.value = result.allowedTopics.join('\n');
+            }
+            updateStatus();
+        } catch (error) {
+            console.error('Error loading topics:', error);
+            statusDiv.textContent = 'Error loading settings';
+            statusDiv.className = 'status inactive';
+        }
+    }
+
+    async function updateStatus() {
+        try {
+            const result = await chrome.storage.local.get(['allowedTopics']);
+            const topics = result.allowedTopics || [];
+            
+            if (topics.length > 0) {
+                statusDiv.textContent = `Filter active with ${topics.length} topic${topics.length > 1 ? 's' : ''}`;
+                statusDiv.className = 'status active';
+            } else {
+                statusDiv.textContent = 'No topics configured - filter inactive';
+                statusDiv.className = 'status inactive';
+            }
+        } catch (error) {
+            console.error('Error checking status:', error);
+            statusDiv.textContent = 'Error checking status';
+            statusDiv.className = 'status inactive';
+        }
+    }
 });

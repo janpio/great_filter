@@ -4,15 +4,33 @@
     <meta charset="utf-8">
     <style>
         body {
-            width: 300px;
-            height: 200px;
-            padding: 10px;
+            width: 350px;
+            height: 400px;
+            padding: 15px;
+            font-family: Arial, sans-serif;
         }
-        input {
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        textarea {
             width: 100%;
+            height: 200px;
             margin-bottom: 10px;
-            padding: 5px;
+            padding: 8px;
             box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            resize: vertical;
         }
         button {
             width: 100%;
@@ -20,15 +38,61 @@
             font-size: 16px;
             cursor: pointer;
             margin-bottom: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
         }
         .saved {
             color: green;
             font-size: 12px;
+            margin-top: 5px;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 5px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status.active {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
     </style>
 </head>
 <body>
-    <button id="factButton">Get Random Fact</button>
+    <h2>Smart Content Filter</h2>
+    
+    <div id="status" class="status">
+        Loading...
+    </div>
+    
+    <label for="topics">Allowed Topics (one per line):</label>
+    <div class="help-text">
+        Enter topics you want to see on YouTube. Videos not matching these topics will be blurred.
+    </div>
+    <textarea id="topics" placeholder="programming&#10;technology&#10;science&#10;education&#10;music"></textarea>
+    
+    <button id="saveButton">Save Topics</button>
+    <div id="savedMessage" class="saved" style="display: none;">Topics saved successfully!</div>
+    
+    <button id="filterButton" style="background-color: #2196F3; margin-top: 10px;">Filter Now</button>
+    <div id="filterMessage" class="saved" style="display: none;">Filtering started! Check console for details.</div>
+    
     <script src="config.js"></script>
     <script src="popup.js"></script>
 </body>

@@ -7,8 +7,18 @@
     "default_popup": "popup.html",
     "default_title": "Smart Content Filter"
   },
-  "permissions": ["storage"],
-  "host_permissions": ["https://openrouter.ai/*"],
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://openrouter.ai/*", "https://www.youtube.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
   "web_accessible_resources": [
     {
       "resources": ["config.js"],
