@@ -8,7 +8,7 @@
     "default_title": "Smart Content Filter"
   },
   "permissions": ["storage", "tabs"],
-  "host_permissions": ["https://openrouter.ai/*", "https://www.youtube.com/*"],
+  "host_permissions": ["https://openrouter.ai/*", "https://www.youtube.com/*", "https://www.reddit.com/*"],
   "background": {
     "service_worker": "background.js"
   },
@@ -16,6 +16,11 @@
     {
       "matches": ["https://www.youtube.com/*"],
       "js": ["content.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://www.reddit.com/*"],
+      "js": ["reddit-content.js"],
       "run_at": "document_end"
     }
   ],
