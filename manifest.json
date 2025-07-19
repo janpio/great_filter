@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Smart Content Filter",
+  "name": "Great Filter",
   "version": "1.0",
-  "description": "A basic Chrome extension with popup",
+  "description": "AI-powered content filtering extension",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Smart Content Filter"
+    "default_title": "Great Filter"
   },
   "permissions": ["storage", "tabs"],
   "host_permissions": ["https://openrouter.ai/*", "https://www.youtube.com/*", "https://www.reddit.com/*", "https://x.com/*", "https://news.ycombinator.com/*"],

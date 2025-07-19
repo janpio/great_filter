@@ -1,4 +1,4 @@
-console.log('🔧 Smart Content Filter: Background worker loaded');
+console.log('🔧 Great Filter: Background worker loaded');
 
 importScripts('config.js');
 

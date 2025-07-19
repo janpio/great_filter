@@ -1,4 +1,4 @@
-console.log('🔍 Smart Content Filter: Hacker News content script loaded');
+console.log('🔍 Great Filter: Hacker News content script loaded');
 
 class HackerNewsContentFilter extends ContentFilterBase {
     constructor() {
@@ -97,7 +97,7 @@ class HackerNewsContentFilter extends ContentFilterBase {
             );
         }, 1000);
 
-        console.log('🔍 Smart Content Filter: Ready for Hacker News filtering with auto-start support!');
+        console.log('🔍 Great Filter: Ready for Hacker News filtering with auto-start support!');
     }
 }
 

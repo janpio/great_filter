@@ -1,4 +1,4 @@
-console.log('🔍 Smart Content Filter: X (Twitter) content script loaded');
+console.log('🔍 Great Filter: X (Twitter) content script loaded');
 
 class XContentFilter extends ContentFilterBase {
     constructor() {
@@ -102,7 +102,7 @@ class XContentFilter extends ContentFilterBase {
             );
         }, 1000);
 
-        console.log('🔍 Smart Content Filter: Ready for X (Twitter) filtering with auto-start support!');
+        console.log('🔍 Great Filter: Ready for X (Twitter) filtering with auto-start support!');
     }
 }
 

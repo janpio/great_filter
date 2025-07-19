@@ -1,4 +1,4 @@
-console.log('🔧 Smart Content Filter: Shared prompts loaded');
+console.log('🔧 Great Filter: Shared prompts loaded');
 
 class PromptTemplates {
     static createSingleItemPrompt(content, topics) {

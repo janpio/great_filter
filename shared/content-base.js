@@ -1,4 +1,4 @@
-console.log('🔧 Smart Content Filter: Shared content base loaded');
+console.log('🔧 Great Filter: Shared content base loaded');
 
 class ContentFilterBase {
     constructor() {
@@ -24,7 +24,7 @@ class ContentFilterBase {
             this.stats.filtered++;
             this.stats.total++;
             this.sendStatsToPopup();
-            console.log('✅ Smart Content Filter: Blurred and desaturated element:', title);
+            console.log('✅ Great Filter: Blurred and desaturated element:', title);
         } else {
             console.log('⚠️ DEBUG: Element already filtered:', title);
         }
@@ -49,11 +49,11 @@ class ContentFilterBase {
         
         try {
             if (elements.length === 0) {
-                console.log(`❌ Smart Content Filter: No new ${elementType}s found`);
+                console.log(`❌ Great Filter: No new ${elementType}s found`);
                 return;
             }
             
-            console.log(`🚀 Smart Content Filter: Processing ${elements.length} ${elementType}s in single batch`);
+            console.log(`🚀 Great Filter: Processing ${elements.length} ${elementType}s in single batch`);
             
             elements.forEach(element => this.processedItems.add(element.title));
             
@@ -72,7 +72,7 @@ class ContentFilterBase {
             console.log(`📡 DEBUG: Batch response received:`, response);
             
             if (response.error) {
-                console.error(`❌ Smart Content Filter: Error checking ${elementType}s:`, response.error);
+                console.error(`❌ Great Filter: Error checking ${elementType}s:`, response.error);
                 return;
             }
             
@@ -81,16 +81,16 @@ class ContentFilterBase {
                 const element = elements[index];
                 if (result.isAllowed) {
                     this.unblurElement(element.container);
-                    console.log(`✅ Smart Content Filter: ${elementType} ${index + 1} allowed: "${element.title}"`);
+                    console.log(`✅ Great Filter: ${elementType} ${index + 1} allowed: "${element.title}"`);
                 } else {
                     this.blurElement(element.container, element.title);
-                    console.log(`🚫 Smart Content Filter: ${elementType} ${index + 1} blocked: "${element.title}"`);
+                    console.log(`🚫 Great Filter: ${elementType} ${index + 1} blocked: "${element.title}"`);
                 }
             });
             
             console.log(`🎉 DEBUG: Finished processing all ${elementType}s in batch`);
         } catch (error) {
-            console.error(`❌ Smart Content Filter: Error in processElementsBatch for ${elementType}s:`, error);
+            console.error(`❌ Great Filter: Error in processElementsBatch for ${elementType}s:`, error);
         }
     }
 
@@ -124,7 +124,7 @@ class ContentFilterBase {
                     console.log(`📡 DEBUG: Scroll batch response received:`, response);
                     
                     if (response.error) {
-                        console.error(`❌ Smart Content Filter: Error checking scroll ${elementType}s:`, response.error);
+                        console.error(`❌ Great Filter: Error checking scroll ${elementType}s:`, response.error);
                         return;
                     }
                     
@@ -135,16 +135,16 @@ class ContentFilterBase {
                         
                         if (result.isAllowed) {
                             this.unblurElement(element.container);
-                            console.log(`✅ Smart Content Filter: Scroll ${elementType} ${index + 1} allowed: "${element.title}"`);
+                            console.log(`✅ Great Filter: Scroll ${elementType} ${index + 1} allowed: "${element.title}"`);
                         } else {
                             this.blurElement(element.container, element.title);
-                            console.log(`🚫 Smart Content Filter: Scroll ${elementType} ${index + 1} blocked: "${element.title}"`);
+                            console.log(`🚫 Great Filter: Scroll ${elementType} ${index + 1} blocked: "${element.title}"`);
                         }
                     });
                     
                     console.log(`🎉 DEBUG: Finished processing scroll ${elementType}s in batch`);
                 } catch (error) {
-                    console.error(`❌ Smart Content Filter: Error processing scroll ${elementType}s:`, error);
+                    console.error(`❌ Great Filter: Error processing scroll ${elementType}s:`, error);
                 } finally {
                     this.isScrollProcessing = false;
                 }

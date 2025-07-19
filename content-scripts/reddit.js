@@ -1,4 +1,4 @@
-console.log('🔍 Smart Content Filter: Reddit content script loaded');
+console.log('🔍 Great Filter: Reddit content script loaded');
 
 class RedditContentFilter extends ContentFilterBase {
     constructor() {
@@ -48,7 +48,7 @@ class RedditContentFilter extends ContentFilterBase {
             (topics) => this.startScrollMonitoring(topics, () => this.extractRedditPosts(), 'post')
         );
 
-        console.log('🔍 Smart Content Filter: Ready for Reddit filtering with scroll support. Use the popup to start!');
+        console.log('🔍 Great Filter: Ready for Reddit filtering with scroll support. Use the popup to start!');
     }
 }
 
