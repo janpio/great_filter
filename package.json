@@ -6,16 +6,23 @@
     "test": "jest",
     "test:watch": "jest --watch --verbose",
     "test:coverage": "jest --coverage",
-    "syntax-check": "node --check *.js && node --check shared/*.js && node --check content-scripts/*.js"
+    "syntax-check": "node --check *.js && node --check shared/*.js && node --check content-scripts/*.js",
+    "lint": "eslint *.js shared/*.js content-scripts/*.js",
+    "lint:fix": "eslint *.js shared/*.js content-scripts/*.js --fix"
   },
   "devDependencies": {
+    "eslint": "^9.31.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
-    "testMatch": ["<rootDir>/tests/**/*.test.js"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ],
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ],
     "collectCoverageFrom": [
       "content-scripts/*.js",
       "shared/*.js",
