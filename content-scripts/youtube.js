@@ -16,7 +16,8 @@ class YouTubeContentFilter extends ContentFilterBase {
       'ytd-rich-item-renderer',
       'ytd-grid-video-renderer',
       'ytd-playlist-video-renderer',
-      'ytd-movie-renderer'
+      'ytd-movie-renderer',
+      'yt-lockup-view-model'
     ];
 
     console.log('🔍 DEBUG: Container selectors:', containerSelectors);
@@ -34,7 +35,9 @@ class YouTubeContentFilter extends ContentFilterBase {
           'a#video-title-link',
           'h3 a',
           'span[title]',
-          'a[title]'
+          'a[title]',
+          'yt-lockup-view-model a[aria-label]',
+          'yt-lockup-view-model img[alt]'
         ];
 
         let titleElement = null;
@@ -51,7 +54,11 @@ class YouTubeContentFilter extends ContentFilterBase {
         });
 
         if (titleElement) {
-          let title = titleElement.textContent?.trim() || titleElement.title?.trim() || titleElement.getAttribute('title')?.trim();
+          let title = titleElement.textContent?.trim() ||
+                     titleElement.title?.trim() ||
+                     titleElement.getAttribute('title')?.trim() ||
+                     titleElement.getAttribute('aria-label')?.trim() ||
+                     titleElement.getAttribute('alt')?.trim();
 
           console.log(`🔍 DEBUG: Extracted title: "${title}" (selector: ${usedSelector})`);
 
