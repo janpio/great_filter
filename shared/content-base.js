@@ -23,12 +23,10 @@ class ContentFilterBase {
   }
 
   unblurElement(container) {
-    console.log('🔥 DEBUG: Removing blur from element and adding pink outline');
+    console.log('🔥 DEBUG: Removing blur from element');
     container.style.filter = '';
     container.style.opacity = '';
     container.style.pointerEvents = '';
-    container.style.setProperty('outline', '3px solid #ff69b4', 'important');
-    container.style.setProperty('outline-offset', '1px', 'important');
     container.title = 'Allowed: Element kept';
   }
 
