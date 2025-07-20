@@ -6,8 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const savedMessage = document.getElementById('savedMessage');
   const filterButton = document.getElementById('filterButton');
   const filterMessage = document.getElementById('filterMessage');
-  const toggleTopics = document.getElementById('toggleTopics');
-  const topicsSection = document.getElementById('topicsSection');
 
   const statusIndicator = document.getElementById('statusIndicator');
   const statusText = document.getElementById('statusText');
@@ -18,9 +16,17 @@ document.addEventListener('DOMContentLoaded', function() {
   loadSavedTopics();
   checkCurrentFilteringState();
 
-  toggleTopics.addEventListener('click', function() {
-    topicsSection.classList.toggle('visible');
-    toggleTopics.textContent = topicsSection.classList.contains('visible') ? 'Hide Topics' : 'Manage Topics';
+  let originalTopics = '';
+
+  topicsTextarea.addEventListener('input', function() {
+    const currentTopics = topicsTextarea.value.trim();
+    if (currentTopics !== originalTopics) {
+      saveButton.classList.remove('inactive');
+      saveButton.classList.add('active');
+    } else {
+      saveButton.classList.remove('active');
+      saveButton.classList.add('inactive');
+    }
   });
 
   filterButton.addEventListener('click', async function() {
@@ -33,9 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const topics = result.allowedTopics || [];
 
     if (topics.length === 0) {
-      alert('Please configure topics first');
-      topicsSection.classList.add('visible');
-      toggleTopics.textContent = 'Hide Topics';
+      alert('Please configure preferences first');
       return;
     }
 
@@ -73,6 +77,10 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   saveButton.addEventListener('click', async function() {
+    if (!saveButton.classList.contains('active')) {
+      return;
+    }
+
     const topicsText = topicsTextarea.value.trim();
     const topics = topicsText.split('\n').filter(topic => topic.trim() !== '').map(topic => topic.trim());
 
@@ -85,6 +93,10 @@ document.addEventListener('DOMContentLoaded', function() {
       await chrome.storage.local.set({
         allowedTopics: topics
       });
+
+      originalTopics = topicsText;
+      saveButton.classList.remove('active');
+      saveButton.classList.add('inactive');
 
       savedMessage.style.display = 'block';
       setTimeout(() => {
@@ -109,8 +121,12 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const result = await chrome.storage.local.get(['allowedTopics']);
       if (result.allowedTopics && result.allowedTopics.length > 0) {
-        topicsTextarea.value = result.allowedTopics.join('\n');
+        const topicsText = result.allowedTopics.join('\n');
+        topicsTextarea.value = topicsText;
+        originalTopics = topicsText;
       }
+      saveButton.classList.remove('active');
+      saveButton.classList.add('inactive');
       updateStatus();
     } catch (error) {
       console.error('Error loading topics:', error);
@@ -166,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } else if (topics.length > 0 && !filteringEnabled) {
         setStatus('inactive', 'Filtering disabled', `${topics.length} topic${topics.length > 1 ? 's' : ''} configured`, topics);
       } else {
-        setStatus('inactive', 'No topics configured', 'Click "Manage Topics" to get started');
+        setStatus('inactive', 'No topics configured', 'Enter preferences below to get started');
       }
     } catch (error) {
       console.error('Error checking status:', error);

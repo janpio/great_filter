@@ -92,16 +92,12 @@
         .secondary-button:hover {
             background-color: #5a6268;
         }
-        .topics-section {
-            display: none;
+        .preferences-section {
             background: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 15px;
-        }
-        .topics-section.visible {
-            display: block;
         }
         label {
             display: block;
@@ -132,6 +128,31 @@
             margin-top: 5px;
             text-align: center;
         }
+        .save-button {
+            width: 100%;
+            height: 40px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .save-button.inactive {
+            background-color: #6c757d;
+            color: white;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .save-button.active {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        .save-button.active:hover {
+            background-color: #218838;
+        }
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -141,7 +162,7 @@
 </head>
 <body>
     <h2>Great Filter</h2>
-    
+
     <div class="status-bar">
         <div class="status-header">
             <div id="statusIndicator" class="status-indicator inactive"></div>
@@ -150,22 +171,17 @@
         <div id="statusDetails" class="status-details"></div>
         <div id="currentTopics" class="current-topics"></div>
     </div>
-    
+
     <button id="filterButton" class="main-button">Start Filtering</button>
     <div id="filterMessage" class="message" style="display: none;">Filtering started!</div>
-    
-    <button id="toggleTopics" class="secondary-button">Manage Topics</button>
-    
-    <div id="topicsSection" class="topics-section">
-        <label for="topics">Allowed Topics (one per line):</label>
-        <div class="help-text">
-            Enter topics you want to see. Videos not matching these topics will be blurred.
-        </div>
+
+    <div class="preferences-section">
+        <label for="topics">Preferences</label>
         <textarea id="topics" placeholder="programming&#10;technology&#10;science&#10;education&#10;music"></textarea>
-        <button id="saveButton" class="main-button" style="background-color: #28a745;">Save Topics</button>
-        <div id="savedMessage" class="message" style="display: none;">Topics saved successfully!</div>
+        <button id="saveButton" class="save-button inactive">Save Preferences</button>
+        <div id="savedMessage" class="message" style="display: none;">Preferences saved successfully!</div>
     </div>
-    
+
     <script src="config.js"></script>
     <script src="popup.js"></script>
 </body>
