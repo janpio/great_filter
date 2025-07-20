@@ -13,13 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const statusText = document.getElementById('statusText');
   const statusDetails = document.getElementById('statusDetails');
   const currentTopics = document.getElementById('currentTopics');
-  const stats = document.getElementById('stats');
-  const shownCount = document.getElementById('shownCount');
-  const filteredCount = document.getElementById('filteredCount');
-  const totalCount = document.getElementById('totalCount');
-
   let isFiltering = false;
-  let currentStats = { shown: 0, filtered: 0, total: 0 };
 
   loadSavedTopics();
   checkCurrentFilteringState();
@@ -136,8 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response && response.isActive) {
               console.log('Filtering is already active, syncing popup state');
               isFiltering = true;
-              currentStats = response.stats || { shown: 0, filtered: 0, total: 0 };
-              startFiltering(response.topics || [], true);
+              startFiltering(response.topics || []);
             } else {
               updateStatus();
             }
@@ -176,19 +169,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function startFiltering(topics, skipStatsReset = false) {
+  function startFiltering(topics) {
     isFiltering = true;
     filterButton.textContent = 'Stop Filtering';
     filterButton.style.backgroundColor = '#dc3545';
-    setStatus('running', 'Filtering active', 'Processing videos...', topics);
-    stats.style.display = 'flex';
-
-    if (!skipStatsReset) {
-      currentStats = { shown: 0, filtered: 0, total: 0 };
-    }
-    updateStatsDisplay();
-
-    startStatsPolling();
+    setStatus('running', 'Filtering active', '', topics);
   }
 
   async function stopFiltering() {
@@ -216,8 +201,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const result = await chrome.storage.local.get(['allowedTopics']);
     const topics = result.allowedTopics || [];
     setStatus('inactive', 'Filtering stopped', 'Extension disabled', topics);
-    stats.style.display = 'none';
-    stopStatsPolling();
   }
 
   function setStatus(state, text, details = '', topics = []) {
@@ -233,33 +216,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function updateStatsDisplay() {
-    shownCount.textContent = currentStats.shown;
-    filteredCount.textContent = currentStats.filtered;
-    totalCount.textContent = currentStats.total;
-  }
 
   chrome.runtime.onMessage.addListener((request) => {
-    if (request.action === 'updateStats') {
-      currentStats = request.stats;
-      updateStatsDisplay();
-
-      if (isFiltering && currentStats.total > 0) {
-        setStatus('running', 'Filtering active', `${currentStats.total} videos processed`);
-      }
-    }
-
     if (request.action === 'filteringStarted') {
       console.log('Auto-filtering started with topics:', request.topics);
       startFiltering(request.topics);
     }
   });
 
-  function startStatsPolling() {
-    currentStats = { shown: 0, filtered: 0, total: 0 };
-    updateStatsDisplay();
-  }
-
-  function stopStatsPolling() {
-  }
 });

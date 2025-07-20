@@ -7,11 +7,6 @@ class ContentFilterBase {
     this.isScrollProcessing = false;
     this.currentTopics = null;
     this.isFilteringActive = false;
-    this.stats = {
-      total: 0,
-      shown: 0,
-      filtered: 0
-    };
   }
 
   blurElement(container, title) {
@@ -21,9 +16,6 @@ class ContentFilterBase {
       container.style.opacity = '0.6';
       container.style.pointerEvents = 'none';
       container.title = `Filtered: ${title}`;
-      this.stats.filtered++;
-      this.stats.total++;
-      this.sendStatsToPopup();
       console.log('✅ Great Filter: Blurred and desaturated element:', title);
     } else {
       console.log('⚠️ DEBUG: Element already filtered:', title);
@@ -38,9 +30,6 @@ class ContentFilterBase {
     container.style.setProperty('outline', '3px solid #ff69b4', 'important');
     container.style.setProperty('outline-offset', '1px', 'important');
     container.title = 'Allowed: Element kept';
-    this.stats.shown++;
-    this.stats.total++;
-    this.sendStatsToPopup();
   }
 
   async processElementsBatch(elements, topics, elementType = 'video') {
@@ -164,25 +153,6 @@ class ContentFilterBase {
     console.log('📜 DEBUG: Scroll monitoring stopped');
   }
 
-  sendStatsToPopup() {
-    try {
-      chrome.runtime.sendMessage({
-        action: 'updateStats',
-        stats: this.stats
-      });
-    } catch (error) {
-      console.log('Could not send stats to popup:', error);
-    }
-  }
-
-  resetStats() {
-    this.stats = {
-      total: 0,
-      shown: 0,
-      filtered: 0
-    };
-    this.sendStatsToPopup();
-  }
 
   stopFiltering() {
     console.log('🛑 DEBUG: Stopping filtering');
@@ -199,7 +169,6 @@ class ContentFilterBase {
       if (topics.length > 0 && filteringEnabled) {
         console.log('🚀 DEBUG: Filtering is enabled, starting with topics:', topics);
         this.isFilteringActive = true;
-        this.resetStats();
         processElementsFunction(topics);
         startScrollMonitoringFunction(topics);
 
@@ -222,7 +191,6 @@ class ContentFilterBase {
       if (request.action === 'startFiltering') {
         console.log('🚀 DEBUG: Starting filtering with topics:', request.topics);
         this.isFilteringActive = true;
-        this.resetStats();
         processElementsFunction(request.topics);
         startScrollMonitoringFunction(request.topics);
         sendResponse({ success: true });
@@ -234,15 +202,10 @@ class ContentFilterBase {
         sendResponse({ success: true });
       }
 
-      if (request.action === 'getStats') {
-        sendResponse({ stats: this.stats });
-      }
-
       if (request.action === 'getFilteringState') {
         sendResponse({
           isActive: this.isFilteringActive,
-          topics: this.currentTopics,
-          stats: this.stats
+          topics: this.currentTopics
         });
       }
 

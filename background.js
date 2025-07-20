@@ -35,13 +35,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  if (request.action === 'updateStats') {
-    console.log('📊 BACKGROUND DEBUG: Forwarding stats update to popup');
-    chrome.runtime.sendMessage(request).catch(() => {
-    });
-    return true;
-  }
-
   if (request.action === 'filteringStarted') {
     console.log('🚀 BACKGROUND DEBUG: Forwarding filtering started to popup');
     chrome.runtime.sendMessage(request).catch(() => {
