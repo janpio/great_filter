@@ -9,21 +9,30 @@ class ContentFilterBase {
     this.isFilteringActive = false;
   }
 
-  blurElement(container, title) {
-    console.log(`🔥 DEBUG: Applying blur and B&W to element: "${title}"`);
+  blurWaitingElement(container, title) {
+    console.log(`⏳ DEBUG: Applying waiting blur to element: "${title}"`);
     if (!container.style.filter) {
-      container.style.filter = 'blur(5px) grayscale(100%)';
-      container.style.opacity = '0.6';
+      container.style.filter = 'blur(6px) grayscale(100%) brightness(0.2)';
+      container.style.opacity = '0.7';
       container.style.pointerEvents = 'none';
-      container.title = `Filtered: ${title}`;
-      console.log('✅ Great Filter: Blurred and desaturated element:', title);
+      container.title = `Processing: ${title}`;
+      console.log('⏳ Great Filter: Applied heavy waiting blur to element:', title);
     } else {
       console.log('⚠️ DEBUG: Element already filtered:', title);
     }
   }
 
+  blurBlockedElement(container, title) {
+    container.style.filter = 'blur(6px) grayscale(100%) brightness(0.2)';
+    container.style.opacity = '0.3';
+    container.style.pointerEvents = 'none';
+    console.log(`🚫 DEBUG: Applying blocked blur to element: "${title}"`);
+    container.title = `Blocked: ${title}`;
+    console.log('🚫 Great Filter: Applied blocked blur with reddish tint to element:', title);
+  }
+
   unblurElement(container) {
-    console.log('🔥 DEBUG: Removing blur from element');
+    console.log('✅ DEBUG: Removing blur from element');
     container.style.filter = '';
     container.style.opacity = '';
     container.style.pointerEvents = '';
@@ -42,7 +51,10 @@ class ContentFilterBase {
 
       console.log(`🚀 Great Filter: Processing ${elements.length} ${elementType}s in single batch`);
 
-      elements.forEach(element => this.processedItems.add(element.title));
+      elements.forEach(element => {
+        this.processedItems.add(element.title);
+        this.blurWaitingElement(element.container, element.title);
+      });
 
       console.log(`📡 DEBUG: Sending batch of ${elements.length} ${elementType}s to background script`);
 
@@ -70,7 +82,7 @@ class ContentFilterBase {
           this.unblurElement(element.container);
           console.log(`✅ Great Filter: ${elementType} ${index + 1} allowed: "${element.title}"`);
         } else {
-          this.blurElement(element.container, element.title);
+          this.blurBlockedElement(element.container, element.title);
           console.log(`🚫 Great Filter: ${elementType} ${index + 1} blocked: "${element.title}"`);
         }
       });
@@ -96,6 +108,10 @@ class ContentFilterBase {
         this.isScrollProcessing = true;
 
         try {
+          newElements.forEach(element => {
+            this.blurWaitingElement(element.container, element.title);
+          });
+
           console.log(`📡 DEBUG: Sending batch of ${newElements.length} new ${elementType}s to background script`);
 
           chrome.runtime.sendMessage({
@@ -131,7 +147,7 @@ class ContentFilterBase {
               this.unblurElement(element.container);
               console.log(`✅ Great Filter: Scroll ${elementType} ${index + 1} allowed: "${element.title}"`);
             } else {
-              this.blurElement(element.container, element.title);
+              this.blurBlockedElement(element.container, element.title);
               console.log(`🚫 Great Filter: Scroll ${elementType} ${index + 1} blocked: "${element.title}"`);
             }
           });
