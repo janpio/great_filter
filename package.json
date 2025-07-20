@@ -1,0 +1,25 @@
+{
+  "name": "great-filter-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for AI-powered content filtering",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch --verbose",
+    "test:coverage": "jest --coverage",
+    "syntax-check": "node --check *.js && node --check shared/*.js && node --check content-scripts/*.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "testMatch": ["<rootDir>/tests/**/*.test.js"],
+    "collectCoverageFrom": [
+      "content-scripts/*.js",
+      "shared/*.js",
+      "!**/node_modules/**"
+    ]
+  }
+}
