@@ -59,7 +59,14 @@ class RedditContentFilter extends ContentFilterBase {
       (topics) => this.startScrollMonitoring(topics, () => this.extractRedditPosts(), 'post')
     );
 
-    console.log('🔍 Great Filter: Ready for Reddit filtering with scroll support. Use the popup to start!');
+    setTimeout(() => {
+      this.checkFilteringState(
+        (topics) => this.processRedditPostsForFiltering(topics),
+        (topics) => this.startScrollMonitoring(topics, () => this.extractRedditPosts(), 'post')
+      );
+    }, 1000);
+
+    console.log('🔍 Great Filter: Ready for Reddit filtering with auto-start support!');
   }
 }
 
