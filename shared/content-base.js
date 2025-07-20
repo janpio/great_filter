@@ -190,13 +190,14 @@ class ContentFilterBase {
     this.stopScrollMonitoring();
   }
 
-  async autoStartFiltering(processElementsFunction, startScrollMonitoringFunction) {
+  async checkFilteringState(processElementsFunction, startScrollMonitoringFunction) {
     try {
-      const result = await chrome.storage.local.get(['allowedTopics']);
+      const result = await chrome.storage.local.get(['allowedTopics', 'filteringEnabled']);
       const topics = result.allowedTopics || [];
+      const filteringEnabled = result.filteringEnabled === true;
 
-      if (topics.length > 0) {
-        console.log('🚀 DEBUG: Auto-starting filtering with topics:', topics);
+      if (topics.length > 0 && filteringEnabled) {
+        console.log('🚀 DEBUG: Filtering is enabled, starting with topics:', topics);
         this.isFilteringActive = true;
         this.resetStats();
         processElementsFunction(topics);
@@ -206,14 +207,16 @@ class ContentFilterBase {
           action: 'filteringStarted',
           topics: topics
         });
+      } else {
+        console.log('🚀 DEBUG: Filtering is disabled or no topics configured');
       }
     } catch (error) {
-      console.error('Error auto-starting filtering:', error);
+      console.error('Error checking filtering state:', error);
     }
   }
 
   setupMessageListener(processElementsFunction, startScrollMonitoringFunction) {
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       console.log('📨 DEBUG: Message received in content script:', request);
 
       if (request.action === 'startFiltering') {

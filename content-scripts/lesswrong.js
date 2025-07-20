@@ -94,7 +94,7 @@ class LessWrongContentFilter extends ContentFilterBase {
     );
 
     setTimeout(() => {
-      this.autoStartFiltering(
+      this.checkFilteringState(
         (topics) => this.processLessWrongContentForFiltering(topics),
         (topics) => this.startScrollMonitoring(topics, () => this.extractLessWrongContent(), 'content')
       );

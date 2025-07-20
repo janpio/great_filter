@@ -96,7 +96,7 @@ class XContentFilter extends ContentFilterBase {
     );
 
     setTimeout(() => {
-      this.autoStartFiltering(
+      this.checkFilteringState(
         (topics) => this.processTweetsForFiltering(topics),
         (topics) => this.startScrollMonitoring(topics, () => this.extractTweetElements(), 'tweet')
       );

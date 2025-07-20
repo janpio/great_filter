@@ -46,6 +46,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     try {
+      await chrome.storage.local.set({
+        filteringEnabled: true
+      });
+
       const tabs = await chrome.tabs.query({active: true, currentWindow: true});
       if (tabs[0]) {
         await chrome.tabs.sendMessage(tabs[0].id, {
@@ -54,6 +58,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         startFiltering(topics);
+
+        await chrome.tabs.reload(tabs[0].id);
 
         filterMessage.textContent = 'Filtering started!';
         filterMessage.style.display = 'block';
@@ -88,6 +94,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       updateStatus();
 
+      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+      if (tabs[0]) {
+        await chrome.tabs.reload(tabs[0].id);
+      }
+
       console.log('Topics saved:', topics);
     } catch (error) {
       console.error('Error saving topics:', error);
@@ -110,17 +121,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function checkCurrentFilteringState() {
     try {
-      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-      if (tabs[0]) {
-        const response = await chrome.tabs.sendMessage(tabs[0].id, {
-          action: 'getFilteringState'
-        });
+      const result = await chrome.storage.local.get(['filteringEnabled', 'allowedTopics']);
+      const filteringEnabled = result.filteringEnabled === true;
+      const topics = result.allowedTopics || [];
 
-        if (response && response.isActive) {
-          console.log('Filtering is already active, syncing popup state');
-          isFiltering = true;
-          currentStats = response.stats || { shown: 0, filtered: 0, total: 0 };
-          startFiltering(response.topics || [], true);
+      if (filteringEnabled && topics.length > 0) {
+        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+        if (tabs[0]) {
+          try {
+            const response = await chrome.tabs.sendMessage(tabs[0].id, {
+              action: 'getFilteringState'
+            });
+
+            if (response && response.isActive) {
+              console.log('Filtering is already active, syncing popup state');
+              isFiltering = true;
+              currentStats = response.stats || { shown: 0, filtered: 0, total: 0 };
+              startFiltering(response.topics || [], true);
+            } else {
+              updateStatus();
+            }
+          } catch (error) {
+            console.log('Could not check filtering state (probably not on supported site):', error);
+            updateStatus();
+          }
         } else {
           updateStatus();
         }
@@ -128,18 +152,21 @@ document.addEventListener('DOMContentLoaded', function() {
         updateStatus();
       }
     } catch (error) {
-      console.log('Could not check filtering state (probably not on supported site):', error);
+      console.error('Error checking filtering state:', error);
       updateStatus();
     }
   }
 
   async function updateStatus() {
     try {
-      const result = await chrome.storage.local.get(['allowedTopics']);
+      const result = await chrome.storage.local.get(['allowedTopics', 'filteringEnabled']);
       const topics = result.allowedTopics || [];
+      const filteringEnabled = result.filteringEnabled === true;
 
-      if (topics.length > 0) {
-        setStatus('inactive', 'Ready to filter', `${topics.length} topic${topics.length > 1 ? 's' : ''} configured`, topics);
+      if (topics.length > 0 && filteringEnabled) {
+        setStatus('inactive', 'Filtering enabled', `${topics.length} topic${topics.length > 1 ? 's' : ''} configured`, topics);
+      } else if (topics.length > 0 && !filteringEnabled) {
+        setStatus('inactive', 'Filtering disabled', `${topics.length} topic${topics.length > 1 ? 's' : ''} configured`, topics);
       } else {
         setStatus('inactive', 'No topics configured', 'Click "Manage Topics" to get started');
       }
@@ -170,11 +197,17 @@ document.addEventListener('DOMContentLoaded', function() {
     filterButton.style.backgroundColor = '#2196F3';
 
     try {
+      await chrome.storage.local.set({
+        filteringEnabled: false
+      });
+
       const tabs = await chrome.tabs.query({active: true, currentWindow: true});
       if (tabs[0]) {
         await chrome.tabs.sendMessage(tabs[0].id, {
           action: 'stopFiltering'
         });
+
+        await chrome.tabs.reload(tabs[0].id);
       }
     } catch (error) {
       console.error('Error stopping filter:', error);
@@ -182,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const result = await chrome.storage.local.get(['allowedTopics']);
     const topics = result.allowedTopics || [];
-    setStatus('inactive', 'Filtering stopped', 'Refresh page to see all content', topics);
+    setStatus('inactive', 'Filtering stopped', 'Extension disabled', topics);
     stats.style.display = 'none';
     stopStatsPolling();
   }

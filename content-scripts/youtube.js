@@ -93,7 +93,7 @@ class YouTubeContentFilter extends ContentFilterBase {
     );
 
     setTimeout(() => {
-      this.autoStartFiltering(
+      this.checkFilteringState(
         (topics) => this.processVideosForFiltering(topics),
         (topics) => this.startScrollMonitoring(topics, () => this.extractVideoElements(), 'video')
       );

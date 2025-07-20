@@ -91,7 +91,7 @@ class HackerNewsContentFilter extends ContentFilterBase {
     );
 
     setTimeout(() => {
-      this.autoStartFiltering(
+      this.checkFilteringState(
         (topics) => this.processStoriesForFiltering(topics),
         (topics) => this.startScrollMonitoring(topics, () => this.extractStoryElements(), 'story')
       );
