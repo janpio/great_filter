@@ -36,7 +36,18 @@ class RedditContentFilter extends ContentFilterBase {
 
   async processRedditPostsForFiltering(topics) {
     const postElements = this.extractRedditPosts();
-    await this.processElementsBatch(postElements, topics, 'post');
+
+    if (postElements.length > 0) {
+      chrome.runtime.sendMessage({
+        action: 'contentProcessing'
+      });
+
+      await this.processElementsBatch(postElements, topics, 'post');
+
+      chrome.runtime.sendMessage({
+        action: 'filteringComplete'
+      });
+    }
   }
 
   init() {

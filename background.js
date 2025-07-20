@@ -7,6 +7,18 @@ const MIN_API_INTERVAL = 100;
 let apiCallQueue = [];
 let processingQueue = false;
 
+const tabFilteringStates = new Map();
+
+async function getCurrentTabId() {
+  try {
+    const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+    return tabs[0]?.id;
+  } catch (error) {
+    console.error('Error getting current tab ID:', error);
+    return null;
+  }
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('📨 BACKGROUND DEBUG: Message received:', request);
 
@@ -36,12 +48,89 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'filteringStarted') {
-    console.log('🚀 BACKGROUND DEBUG: Forwarding filtering started to popup');
+    console.log('🚀 BACKGROUND DEBUG: Received filteringStarted message');
+    getCurrentTabId().then(tabId => {
+      if (tabId) {
+        tabFilteringStates.set(tabId, 'processing');
+        setBadge('processing', tabId);
+      }
+    });
     chrome.runtime.sendMessage(request).catch(() => {
     });
     return true;
   }
+
+  if (request.action === 'filteringStopped') {
+    console.log('🚀 BACKGROUND DEBUG: Received filteringStopped message');
+    getCurrentTabId().then(tabId => {
+      if (tabId) {
+        tabFilteringStates.set(tabId, 'inactive');
+        setBadge('inactive', tabId);
+      }
+    });
+    return true;
+  }
+
+  if (request.action === 'filteringComplete') {
+    console.log('🚀 BACKGROUND DEBUG: Received filteringComplete message');
+    getCurrentTabId().then(tabId => {
+      if (tabId) {
+        tabFilteringStates.set(tabId, 'active');
+        setBadge('active', tabId);
+      }
+    });
+    return true;
+  }
+
+  if (request.action === 'contentProcessing') {
+    console.log('🚀 BACKGROUND DEBUG: Received contentProcessing message');
+    getCurrentTabId().then(tabId => {
+      if (tabId) {
+        tabFilteringStates.set(tabId, 'processing');
+        setBadge('processing', tabId);
+      }
+    });
+    return true;
+  }
 });
+
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  const tab = await chrome.tabs.get(activeInfo.tabId);
+  await checkAndUpdateIcon(tab);
+
+  const savedState = tabFilteringStates.get(activeInfo.tabId);
+  if (savedState && isSupportedSite(tab.url)) {
+    setBadge(savedState, activeInfo.tabId);
+  }
+});
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete') {
+    await checkAndUpdateIcon(tab);
+  }
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  initializeIcon();
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  initializeIcon();
+});
+
+async function initializeIcon() {
+  try {
+    const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+    if (tabs[0]) {
+      await checkAndUpdateIcon(tabs[0]);
+    } else {
+      setBadge('inactive');
+    }
+  } catch (error) {
+    console.error('Error initializing icon:', error);
+    setBadge('inactive');
+  }
+}
 
 async function processApiQueue() {
   processingQueue = true;
@@ -270,3 +359,78 @@ Video titles:
     sendResponse({ error: error.message });
   }
 }
+
+const SUPPORTED_SITES = [
+  'youtube.com',
+  'reddit.com',
+  'x.com',
+  'news.ycombinator.com',
+  'lesswrong.com'
+];
+
+function isSupportedSite(url) {
+  if (!url) return false;
+  try {
+    const hostname = new URL(url).hostname;
+    return SUPPORTED_SITES.some(site => hostname.includes(site));
+  } catch (error) {
+    return false;
+  }
+}
+
+async function checkAndUpdateIcon(tab) {
+  if (!tab || !tab.url) return;
+
+  const isSupported = isSupportedSite(tab.url);
+
+  if (!isSupported) {
+    setBadge('inactive');
+    return;
+  }
+
+  setBadge('inactive');
+}
+
+
+function setBadge(state, tabId = null) {
+  console.log(`🔧 BACKGROUND DEBUG: Setting badge state to ${state} for tab ${tabId || 'ALL'}`);
+
+  let badgeText = '';
+  let badgeColor = '#6c757d';
+
+  switch(state) {
+  case 'inactive':
+    badgeText = '●';
+    badgeColor = '#6c757d';
+    break;
+  case 'processing':
+    badgeText = '●';
+    badgeColor = '#ffc107';
+    break;
+  case 'active':
+    badgeText = '●';
+    badgeColor = '#28a745';
+    break;
+  default:
+    badgeText = '';
+    badgeColor = '#6c757d';
+  }
+
+  const badgeConfig = { text: badgeText };
+  const badgeColorConfig = { color: badgeColor };
+
+  if (tabId) {
+    badgeConfig.tabId = tabId;
+    badgeColorConfig.tabId = tabId;
+  }
+
+  Promise.all([
+    chrome.action.setBadgeText(badgeConfig),
+    chrome.action.setBadgeBackgroundColor(badgeColorConfig)
+  ]).then(() => {
+    console.log(`✅ BACKGROUND DEBUG: Badge set to ${state} (${badgeText}, ${badgeColor}) for tab ${tabId || 'ALL'}`);
+  }).catch(error => {
+    console.error(`❌ BACKGROUND DEBUG: Error setting badge for tab ${tabId || 'ALL'}:`, error);
+  });
+}
+

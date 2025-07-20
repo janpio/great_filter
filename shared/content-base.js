@@ -100,6 +100,10 @@ class ContentFilterBase {
         try {
           console.log(`📡 DEBUG: Sending batch of ${newElements.length} new ${elementType}s to background script`);
 
+          chrome.runtime.sendMessage({
+            action: 'contentProcessing'
+          });
+
           const response = await chrome.runtime.sendMessage({
             action: 'checkVideoTitlesBatch',
             videos: newElements.map((element, index) => ({
@@ -114,6 +118,9 @@ class ContentFilterBase {
 
           if (response.error) {
             console.error(`❌ Great Filter: Error checking scroll ${elementType}s:`, response.error);
+            chrome.runtime.sendMessage({
+              action: 'filteringComplete'
+            });
             return;
           }
 
@@ -132,8 +139,15 @@ class ContentFilterBase {
           });
 
           console.log(`🎉 DEBUG: Finished processing scroll ${elementType}s in batch`);
+
+          chrome.runtime.sendMessage({
+            action: 'filteringComplete'
+          });
         } catch (error) {
           console.error(`❌ Great Filter: Error processing scroll ${elementType}s:`, error);
+          chrome.runtime.sendMessage({
+            action: 'filteringComplete'
+          });
         } finally {
           this.isScrollProcessing = false;
         }
@@ -171,11 +185,6 @@ class ContentFilterBase {
         this.isFilteringActive = true;
         processElementsFunction(topics);
         startScrollMonitoringFunction(topics);
-
-        chrome.runtime.sendMessage({
-          action: 'filteringStarted',
-          topics: topics
-        });
       } else {
         console.log('🚀 DEBUG: Filtering is disabled or no topics configured');
       }

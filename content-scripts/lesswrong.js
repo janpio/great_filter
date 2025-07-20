@@ -79,7 +79,18 @@ class LessWrongContentFilter extends ContentFilterBase {
 
   async processLessWrongContentForFiltering(topics) {
     const contentElements = this.extractLessWrongContent();
-    await this.processElementsBatch(contentElements, topics, 'content');
+
+    if (contentElements.length > 0) {
+      chrome.runtime.sendMessage({
+        action: 'contentProcessing'
+      });
+
+      await this.processElementsBatch(contentElements, topics, 'content');
+
+      chrome.runtime.sendMessage({
+        action: 'filteringComplete'
+      });
+    }
   }
 
   init() {

@@ -80,7 +80,18 @@ class YouTubeContentFilter extends ContentFilterBase {
 
   async processVideosForFiltering(topics) {
     const videoElements = this.extractVideoElements();
-    await this.processElementsBatch(videoElements, topics, 'video');
+
+    if (videoElements.length > 0) {
+      chrome.runtime.sendMessage({
+        action: 'contentProcessing'
+      });
+
+      await this.processElementsBatch(videoElements, topics, 'video');
+
+      chrome.runtime.sendMessage({
+        action: 'filteringComplete'
+      });
+    }
   }
 
   init() {

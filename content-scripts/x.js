@@ -83,7 +83,18 @@ class XContentFilter extends ContentFilterBase {
 
   async processTweetsForFiltering(topics) {
     const tweetElements = this.extractTweetElements();
-    await this.processElementsBatch(tweetElements, topics, 'tweet');
+
+    if (tweetElements.length > 0) {
+      chrome.runtime.sendMessage({
+        action: 'contentProcessing'
+      });
+
+      await this.processElementsBatch(tweetElements, topics, 'tweet');
+
+      chrome.runtime.sendMessage({
+        action: 'filteringComplete'
+      });
+    }
   }
 
   init() {

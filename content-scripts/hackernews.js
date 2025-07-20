@@ -78,7 +78,18 @@ class HackerNewsContentFilter extends ContentFilterBase {
 
   async processStoriesForFiltering(topics) {
     const storyElements = this.extractStoryElements();
-    await this.processElementsBatch(storyElements, topics, 'story');
+
+    if (storyElements.length > 0) {
+      chrome.runtime.sendMessage({
+        action: 'contentProcessing'
+      });
+
+      await this.processElementsBatch(storyElements, topics, 'story');
+
+      chrome.runtime.sendMessage({
+        action: 'filteringComplete'
+      });
+    }
   }
 
   init() {

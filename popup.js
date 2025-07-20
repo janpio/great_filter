@@ -51,6 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
           topics: topics
         });
 
+        chrome.runtime.sendMessage({
+          action: 'filteringStarted',
+          topics: topics
+        });
+
         startFiltering(topics);
 
         await chrome.tabs.reload(tabs[0].id);
@@ -190,6 +195,10 @@ document.addEventListener('DOMContentLoaded', function() {
       if (tabs[0]) {
         await chrome.tabs.sendMessage(tabs[0].id, {
           action: 'stopFiltering'
+        });
+
+        chrome.runtime.sendMessage({
+          action: 'filteringStopped'
         });
 
         await chrome.tabs.reload(tabs[0].id);
