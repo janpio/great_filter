@@ -13,7 +13,7 @@ class ContentFilterBase {
     console.log(`⏳ DEBUG: Applying waiting blur to element: "${title}"`);
     if (!container.style.filter) {
       container.style.filter = 'blur(6px) grayscale(100%) brightness(0.2)';
-      container.style.opacity = '0.7';
+      container.style.opacity = '0.8';
       container.style.pointerEvents = 'none';
       container.title = `Processing: ${title}`;
       console.log('⏳ Great Filter: Applied heavy waiting blur to element:', title);
@@ -24,7 +24,7 @@ class ContentFilterBase {
 
   blurBlockedElement(container, title) {
     container.style.filter = 'blur(6px) grayscale(100%) brightness(0.2)';
-    container.style.opacity = '0.3';
+    container.style.opacity = '0';
     container.style.pointerEvents = 'none';
     console.log(`🚫 DEBUG: Applying blocked blur to element: "${title}"`);
     container.title = `Blocked: ${title}`;
