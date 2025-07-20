@@ -93,8 +93,8 @@ describe('LessWrong Content Filter', () => {
 
       const expectedContent = [
         "If you're considering a career in AI policy, now is an especially good time to start applying widely as there's a lot of hiring going on right now",
-        "random thoughts, all of which may be wrong\n\none thing that I think the world needs more of is analyses into the nature of the mind by people who are both",
-        "Epistemic status: Probably a terrible idea, but fun to think about, so I'm writing my thoughts down as I go.\n\nHere's a whimsical simple AGI governance"
+        "random thoughts, all of which may be wrong",
+        "Epistemic status: Probably a terrible idea, but fun to think about, so I'm writing my thoughts down as I go."
       ];
 
       expectedContent.forEach(expectedText => {

@@ -10,8 +10,6 @@ class LessWrongContentFilter extends ContentFilterBase {
     const contentElements = [];
 
     const postSelectors = [
-      '.LWPostsItem-root',
-      '.PostsItem-root',
       'span[class*="post_"]'
     ];
 
@@ -19,7 +17,7 @@ class LessWrongContentFilter extends ContentFilterBase {
       const posts = document.querySelectorAll(selector);
       console.log(`🔍 DEBUG: Found ${posts.length} posts with selector: ${selector}`);
 
-      posts.forEach((container, index) => {
+      posts.forEach((container) => {
         const titleSelectors = [
           '.PostsTitle-root a span',
           '.LWPostsItem-title a span',
@@ -54,7 +52,7 @@ class LessWrongContentFilter extends ContentFilterBase {
     const quickTakes = document.querySelectorAll('.LWQuickTakesCollapsedListItem-root');
     console.log(`🔍 DEBUG: Found ${quickTakes.length} quick takes`);
 
-    quickTakes.forEach((container, index) => {
+    quickTakes.forEach((container) => {
       const textElement = container.querySelector('.LWQuickTakesCollapsedListItem-body');
 
       if (textElement) {
