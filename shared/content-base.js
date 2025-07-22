@@ -226,6 +226,29 @@ class ContentFilterBase {
     this.stopScrollMonitoring();
   }
 
+  waitForElements(extractElementsFunction, callback, maxAttempts = 50, interval = 100) {
+    console.log('🔍 DEBUG: Starting element polling...');
+    let attempts = 0;
+
+    const poll = () => {
+      attempts++;
+      const elements = extractElementsFunction();
+
+      if (elements && elements.length > 0) {
+        console.log(`🔍 DEBUG: Found ${elements.length} elements after ${attempts} attempts`);
+        callback();
+      } else if (attempts < maxAttempts) {
+        console.log(`🔍 DEBUG: No elements found, attempt ${attempts}/${maxAttempts}`);
+        setTimeout(poll, interval);
+      } else {
+        console.log('🔍 DEBUG: Max polling attempts reached, proceeding anyway');
+        callback();
+      }
+    };
+
+    poll();
+  }
+
   async checkFilteringState(processElementsFunction, startScrollMonitoringFunction) {
     try {
       const result = await chrome.storage.local.get(['allowedTopics', 'filteringEnabled']);

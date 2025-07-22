@@ -316,12 +316,15 @@ class HackerNewsContentFilter extends ContentFilterBase {
       (topics) => this.startScrollMonitoring(topics, () => this.extractStoryElements(), 'story')
     );
 
-    setTimeout(() => {
-      this.checkFilteringState(
-        (topics) => this.processStoriesForFiltering(topics),
-        (topics) => this.startScrollMonitoring(topics, () => this.extractStoryElements(), 'story')
-      );
-    }, 1000);
+    this.waitForElements(
+      () => this.extractStoryElements(),
+      () => {
+        this.checkFilteringState(
+          (topics) => this.processStoriesForFiltering(topics),
+          (topics) => this.startScrollMonitoring(topics, () => this.extractStoryElements(), 'story')
+        );
+      }
+    );
 
     console.log('🔍 Great Filter: Ready for Hacker News filtering with auto-start support!');
   }

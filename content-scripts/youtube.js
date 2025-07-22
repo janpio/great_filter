@@ -117,12 +117,15 @@ class YouTubeContentFilter extends ContentFilterBase {
       (topics) => this.startScrollMonitoring(topics, () => this.extractVideoElements(), 'video')
     );
 
-    setTimeout(() => {
-      this.checkFilteringState(
-        (topics) => this.processVideosForFiltering(topics),
-        (topics) => this.startScrollMonitoring(topics, () => this.extractVideoElements(), 'video')
-      );
-    }, 1000);
+    this.waitForElements(
+      () => this.extractVideoElements(),
+      () => {
+        this.checkFilteringState(
+          (topics) => this.processVideosForFiltering(topics),
+          (topics) => this.startScrollMonitoring(topics, () => this.extractVideoElements(), 'video')
+        );
+      }
+    );
 
     console.log('🔍 Great Filter: Ready for YouTube filtering with auto-start support!');
   }
