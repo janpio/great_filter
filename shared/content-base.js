@@ -176,7 +176,6 @@ class ContentFilterBase {
           console.log(`🎯 DEBUG: Applying scroll batch results to ${elementType}s`);
           response.results.forEach((result, index) => {
             const element = newElements[index];
-            this.processedItems.add(element.title);
 
             if (result.isAllowed) {
               this.statistics.shownPosts++;

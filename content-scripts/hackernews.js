@@ -8,6 +8,7 @@ class HackerNewsContentFilter extends ContentFilterBase {
   extractStoryElements() {
     console.log('🔍 DEBUG: Starting extractStoryElements()');
     const storyElements = [];
+    const processedContainers = new Set();
 
     const containerSelectors = [
       'tr.athing.submission',
@@ -23,6 +24,12 @@ class HackerNewsContentFilter extends ContentFilterBase {
       console.log(`🔍 DEBUG: Found ${containers.length} containers for selector: ${selector}`);
 
       containers.forEach((container, containerIndex) => {
+        if (processedContainers.has(container)) {
+          console.log(`🔍 DEBUG: Skipping already processed container for selector: ${selector}`);
+          return;
+        }
+        processedContainers.add(container);
+
         console.log(`🔍 DEBUG: Processing container ${containerIndex + 1} for selector: ${selector}`);
 
         const titleSelectors = [
@@ -253,7 +260,6 @@ class HackerNewsContentFilter extends ContentFilterBase {
           console.log(`🎯 DEBUG: Applying scroll batch results to ${elementType}s`);
           response.results.forEach((result, index) => {
             const element = newElements[index];
-            this.processedItems.add(element.title);
 
             if (result.isAllowed) {
               this.statistics.shownPosts++;
