@@ -4,7 +4,6 @@ class ContentFilterBase {
   constructor() {
     this.processedItems = new Set();
     this.scrollTimeout = null;
-    this.isScrollProcessing = false;
     this.currentTopics = null;
     this.isFilteringActive = false;
     this.statistics = {
@@ -12,6 +11,11 @@ class ContentFilterBase {
       shownPosts: 0,
       filteredPosts: 0
     };
+    this.pollingInterval = null;
+    this.lastScrollTime = 0;
+    this.isScrollActive = false;
+    this.scrollActivityTimeout = null;
+    this.extractElementsFunction = null;
   }
 
   sendStatsUpdate() {
@@ -126,97 +130,37 @@ class ContentFilterBase {
     }
   }
 
-  async handleScroll(extractElementsFunction, elementType = 'video') {
-    if (!this.currentTopics || this.isScrollProcessing) return;
-
-    clearTimeout(this.scrollTimeout);
-    this.scrollTimeout = setTimeout(async () => {
-      console.log(`📜 DEBUG: Scroll detected, checking for new ${elementType}s`);
-
-      const allElements = extractElementsFunction();
-      const newElements = allElements.filter(element => !this.processedItems.has(element.title));
-
-      if (newElements.length > 0) {
-        console.log(`📜 DEBUG: Found ${newElements.length} new ${elementType}s on scroll`);
-        this.isScrollProcessing = true;
-
-        this.statistics.totalPosts += newElements.length;
-
-        try {
-          newElements.forEach(element => {
-            this.blurWaitingElement(element.container, element.title);
-          });
-
-          console.log(`📡 DEBUG: Sending batch of ${newElements.length} new ${elementType}s to background script`);
-
-          chrome.runtime.sendMessage({
-            action: 'contentProcessing'
-          });
-
-          const response = await chrome.runtime.sendMessage({
-            action: 'checkVideoTitlesBatch',
-            videos: newElements.map((element, index) => ({
-              index: index + 1,
-              title: element.title,
-              container: element.container
-            })),
-            topics: this.currentTopics
-          });
-
-          console.log('📡 DEBUG: Scroll batch response received:', response);
-
-          if (response.error) {
-            console.error(`❌ Great Filter: Error checking scroll ${elementType}s:`, response.error);
-            chrome.runtime.sendMessage({
-              action: 'filteringComplete'
-            });
-            return;
-          }
-
-          console.log(`🎯 DEBUG: Applying scroll batch results to ${elementType}s`);
-          response.results.forEach((result, index) => {
-            const element = newElements[index];
-
-            if (result.isAllowed) {
-              this.statistics.shownPosts++;
-              this.unblurElement(element.container);
-              console.log(`✅ Great Filter: Scroll ${elementType} ${index + 1} allowed: "${element.title}"`);
-            } else {
-              this.statistics.filteredPosts++;
-              this.blurBlockedElement(element.container, element.title);
-              console.log(`🚫 Great Filter: Scroll ${elementType} ${index + 1} blocked: "${element.title}"`);
-            }
-          });
-
-          this.sendStatsUpdate();
-
-          console.log(`🎉 DEBUG: Finished processing scroll ${elementType}s in batch`);
-
-          chrome.runtime.sendMessage({
-            action: 'filteringComplete'
-          });
-        } catch (error) {
-          console.error(`❌ Great Filter: Error processing scroll ${elementType}s:`, error);
-          chrome.runtime.sendMessage({
-            action: 'filteringComplete'
-          });
-        } finally {
-          this.isScrollProcessing = false;
-        }
-      }
-    }, 1000);
-  }
 
   startScrollMonitoring(topics, extractElementsFunction, elementType = 'video') {
     this.currentTopics = topics;
-    window.addEventListener('scroll', () => this.handleScroll(extractElementsFunction, elementType));
-    console.log(`📜 DEBUG: ${elementType} scroll monitoring started`);
+    this.extractElementsFunction = extractElementsFunction;
+
+    this.pollingInterval = setInterval(() => {
+      this.pollForNewContent();
+    }, this.isScrollActive ? 200 : 3000);
+
+    window.addEventListener('scroll', () => this.updateScrollActivity());
+
+    console.log(`📜 DEBUG: ${elementType} adaptive polling started (200ms active / 3000ms idle)`);
   }
 
   stopScrollMonitoring() {
     this.currentTopics = null;
-    window.removeEventListener('scroll', this.handleScroll);
-    console.log('📜 DEBUG: Scroll monitoring stopped');
+    this.extractElementsFunction = null;
+
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+
+    if (this.scrollActivityTimeout) {
+      clearTimeout(this.scrollActivityTimeout);
+      this.scrollActivityTimeout = null;
+    }
+
+    window.removeEventListener('scroll', this.updateScrollActivity);
+
+    console.log('📜 DEBUG: Adaptive polling stopped');
   }
 
 
@@ -247,6 +191,113 @@ class ContentFilterBase {
     };
 
     poll();
+  }
+
+  updateScrollActivity() {
+    this.lastScrollTime = Date.now();
+
+    if (!this.isScrollActive) {
+      this.isScrollActive = true;
+      console.log('📜 DEBUG: Scroll activity detected - switching to active polling');
+      this.adjustPollingInterval();
+    }
+
+    clearTimeout(this.scrollActivityTimeout);
+    this.scrollActivityTimeout = setTimeout(() => {
+      this.isScrollActive = false;
+      console.log('📜 DEBUG: Scroll activity ended - switching to idle polling');
+      this.adjustPollingInterval();
+    }, 2000);
+  }
+
+  adjustPollingInterval() {
+    if (!this.pollingInterval) return;
+
+    clearInterval(this.pollingInterval);
+
+    const interval = this.isScrollActive ? 200 : 3000;
+    console.log(`📜 DEBUG: Adjusting polling interval to ${interval}ms`);
+
+    this.pollingInterval = setInterval(() => {
+      this.pollForNewContent();
+    }, interval);
+  }
+
+  async pollForNewContent() {
+    if (!this.currentTopics || !this.extractElementsFunction) return;
+
+    console.log(`📜 DEBUG: Polling for new content (${this.isScrollActive ? 'active' : 'idle'} mode)`);
+
+    const allElements = this.extractElementsFunction();
+    const newElements = allElements.filter(element => !this.processedItems.has(element.title));
+
+    if (newElements.length > 0) {
+      console.log(`📜 DEBUG: Found ${newElements.length} new elements during polling`);
+      await this.processNewElements(newElements);
+    }
+  }
+
+  async processNewElements(newElements) {
+    console.log(`📡 DEBUG: Processing ${newElements.length} new elements`);
+
+    this.statistics.totalPosts += newElements.length;
+
+    try {
+      newElements.forEach(element => {
+        this.processedItems.add(element.title);
+        this.blurWaitingElement(element.container, element.title);
+      });
+
+      chrome.runtime.sendMessage({
+        action: 'contentProcessing'
+      });
+
+      const response = await chrome.runtime.sendMessage({
+        action: 'checkVideoTitlesBatch',
+        videos: newElements.map((element, index) => ({
+          index: index + 1,
+          title: element.title,
+          container: element.container
+        })),
+        topics: this.currentTopics
+      });
+
+      console.log('📡 DEBUG: Polling batch response received:', response);
+
+      if (response.error) {
+        console.error('❌ Great Filter: Error checking polling elements:', response.error);
+        chrome.runtime.sendMessage({
+          action: 'filteringComplete'
+        });
+        return;
+      }
+
+      response.results.forEach((result, index) => {
+        const element = newElements[index];
+
+        if (result.isAllowed) {
+          this.statistics.shownPosts++;
+          this.unblurElement(element.container);
+          console.log(`✅ Great Filter: Polling element ${index + 1} allowed: "${element.title}"`);
+        } else {
+          this.statistics.filteredPosts++;
+          this.blurBlockedElement(element.container, element.title);
+          console.log(`🚫 Great Filter: Polling element ${index + 1} blocked: "${element.title}"`);
+        }
+      });
+
+      this.sendStatsUpdate();
+
+      chrome.runtime.sendMessage({
+        action: 'filteringComplete'
+      });
+
+    } catch (error) {
+      console.error('❌ Great Filter: Error processing polling elements:', error);
+      chrome.runtime.sendMessage({
+        action: 'filteringComplete'
+      });
+    }
   }
 
   async checkFilteringState(processElementsFunction, startScrollMonitoringFunction) {
