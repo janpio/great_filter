@@ -170,7 +170,7 @@ class ContentFilterBase {
     this.stopScrollMonitoring();
   }
 
-  waitForElements(extractElementsFunction, callback, maxAttempts = 50, interval = 100) {
+  waitForElements(extractElementsFunction, callback, maxAttempts = 50, interval = 50) {
     console.log('🔍 DEBUG: Starting element polling...');
     let attempts = 0;
 
@@ -215,7 +215,7 @@ class ContentFilterBase {
 
     clearInterval(this.pollingInterval);
 
-    const interval = this.isScrollActive ? 200 : 3000;
+    const interval = this.isScrollActive ? 100 : 2000;
     console.log(`📜 DEBUG: Adjusting polling interval to ${interval}ms`);
 
     this.pollingInterval = setInterval(() => {
