@@ -8,6 +8,31 @@ let apiCallQueue = [];
 let processingQueue = false;
 
 const tabFilteringStates = new Map();
+const tabStatistics = new Map();
+let globalApiRequestCount = 0;
+
+initializeGlobalApiCounter();
+
+async function initializeGlobalApiCounter() {
+  try {
+    const result = await chrome.storage.local.get(['globalApiRequestCount']);
+    globalApiRequestCount = result.globalApiRequestCount || 0;
+    console.log('🔧 BACKGROUND DEBUG: Initialized global API counter:', globalApiRequestCount);
+  } catch (error) {
+    console.error('Error initializing global API counter:', error);
+    globalApiRequestCount = 0;
+  }
+}
+
+async function incrementGlobalApiCounter(postCount = 1) {
+  globalApiRequestCount += postCount;
+  try {
+    await chrome.storage.local.set({ globalApiRequestCount });
+    console.log('🔧 BACKGROUND DEBUG: Global API counter incremented by', postCount, 'to:', globalApiRequestCount);
+  } catch (error) {
+    console.error('Error saving global API counter:', error);
+  }
+}
 
 async function getCurrentTabId() {
   try {
@@ -25,6 +50,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'checkVideoTitle') {
     console.log('🔧 BACKGROUND DEBUG: Handling checkVideoTitle request');
 
+    incrementGlobalApiCounter(1);
     apiCallQueue.push({
       title: request.title,
       topics: request.topics,
@@ -42,6 +68,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('🔧 BACKGROUND DEBUG: Handling checkVideoTitlesBatch request');
     console.log('🔧 BACKGROUND DEBUG: Batch size:', request.videos.length);
 
+    incrementGlobalApiCounter(request.videos.length);
     handleBatchVideoTitleCheck(request.videos, request.topics, sendResponse);
 
     return true;
@@ -92,6 +119,63 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
+
+  if (request.action === 'statsUpdate') {
+    console.log('📊 BACKGROUND DEBUG: Received statsUpdate message:', request.statistics);
+    (async () => {
+      try {
+        const tabId = await getCurrentTabId();
+        console.log('📊 BACKGROUND DEBUG: Storing stats for tab ID:', tabId);
+        if (tabId && request.statistics) {
+          tabStatistics.set(tabId, request.statistics);
+          console.log('📊 BACKGROUND DEBUG: Updated tab statistics for tab', tabId, ':', request.statistics);
+          chrome.runtime.sendMessage({
+            action: 'tabStatsUpdated',
+            tabId: tabId,
+            statistics: request.statistics
+          }).catch(() => {});
+        }
+      } catch (error) {
+        console.error('📊 BACKGROUND DEBUG: Error updating stats:', error);
+      }
+    })();
+    return true;
+  }
+
+  if (request.action === 'getGlobalStats') {
+    console.log('📊 BACKGROUND DEBUG: Received getGlobalStats message');
+    sendResponse({
+      globalApiRequestCount: globalApiRequestCount
+    });
+    return true;
+  }
+
+  if (request.action === 'getCurrentTabStats') {
+    console.log('📊 BACKGROUND DEBUG: Received getCurrentTabStats message');
+    (async () => {
+      try {
+        const tabId = await getCurrentTabId();
+        console.log('📊 BACKGROUND DEBUG: Current tab ID:', tabId);
+        const stats = tabStatistics.get(tabId) || {
+          totalPosts: 0,
+          shownPosts: 0,
+          filteredPosts: 0
+        };
+        console.log('📊 BACKGROUND DEBUG: Sending stats:', stats, 'global:', globalApiRequestCount);
+        sendResponse({
+          statistics: stats,
+          globalApiRequestCount: globalApiRequestCount
+        });
+      } catch (error) {
+        console.log('📊 BACKGROUND DEBUG: Error getting tab stats:', error);
+        sendResponse({
+          statistics: { totalPosts: 0, shownPosts: 0, filteredPosts: 0 },
+          globalApiRequestCount: globalApiRequestCount
+        });
+      }
+    })();
+    return true;
+  }
 });
 
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
@@ -112,10 +196,12 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 chrome.runtime.onStartup.addListener(() => {
   initializeIcon();
+  initializeGlobalApiCounter();
 });
 
 chrome.runtime.onInstalled.addListener(() => {
   initializeIcon();
+  initializeGlobalApiCounter();
 });
 
 async function initializeIcon() {
@@ -362,10 +448,7 @@ Video titles:
 
 const SUPPORTED_SITES = [
   'youtube.com',
-  'reddit.com',
-  'x.com',
   'news.ycombinator.com',
-  'lesswrong.com'
 ];
 
 function isSupportedSite(url) {

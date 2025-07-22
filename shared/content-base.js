@@ -7,6 +7,32 @@ class ContentFilterBase {
     this.isScrollProcessing = false;
     this.currentTopics = null;
     this.isFilteringActive = false;
+    this.statistics = {
+      totalPosts: 0,
+      shownPosts: 0,
+      filteredPosts: 0
+    };
+  }
+
+  sendStatsUpdate() {
+    console.log('📊 DEBUG: Sending stats update:', this.statistics);
+    chrome.runtime.sendMessage({
+      action: 'statsUpdate',
+      statistics: {
+        totalPosts: this.statistics.totalPosts,
+        shownPosts: this.statistics.shownPosts,
+        filteredPosts: this.statistics.filteredPosts
+      }
+    });
+  }
+
+  resetStatistics() {
+    this.statistics = {
+      totalPosts: 0,
+      shownPosts: 0,
+      filteredPosts: 0
+    };
+    this.sendStatsUpdate();
   }
 
   blurWaitingElement(container, title) {
@@ -51,6 +77,9 @@ class ContentFilterBase {
 
       console.log(`🚀 Great Filter: Processing ${elements.length} ${elementType}s in single batch`);
 
+      this.statistics.totalPosts += elements.length;
+      console.log('📊 DEBUG: Incremented totalPosts by', elements.length, 'new total:', this.statistics.totalPosts);
+
       elements.forEach(element => {
         this.processedItems.add(element.title);
         this.blurWaitingElement(element.container, element.title);
@@ -79,13 +108,17 @@ class ContentFilterBase {
       response.results.forEach((result, index) => {
         const element = elements[index];
         if (result.isAllowed) {
+          this.statistics.shownPosts++;
           this.unblurElement(element.container);
           console.log(`✅ Great Filter: ${elementType} ${index + 1} allowed: "${element.title}"`);
         } else {
+          this.statistics.filteredPosts++;
           this.blurBlockedElement(element.container, element.title);
           console.log(`🚫 Great Filter: ${elementType} ${index + 1} blocked: "${element.title}"`);
         }
       });
+
+      this.sendStatsUpdate();
 
       console.log(`🎉 DEBUG: Finished processing all ${elementType}s in batch`);
     } catch (error) {
@@ -106,6 +139,8 @@ class ContentFilterBase {
       if (newElements.length > 0) {
         console.log(`📜 DEBUG: Found ${newElements.length} new ${elementType}s on scroll`);
         this.isScrollProcessing = true;
+
+        this.statistics.totalPosts += newElements.length;
 
         try {
           newElements.forEach(element => {
@@ -144,13 +179,17 @@ class ContentFilterBase {
             this.processedItems.add(element.title);
 
             if (result.isAllowed) {
+              this.statistics.shownPosts++;
               this.unblurElement(element.container);
               console.log(`✅ Great Filter: Scroll ${elementType} ${index + 1} allowed: "${element.title}"`);
             } else {
+              this.statistics.filteredPosts++;
               this.blurBlockedElement(element.container, element.title);
               console.log(`🚫 Great Filter: Scroll ${elementType} ${index + 1} blocked: "${element.title}"`);
             }
           });
+
+          this.sendStatsUpdate();
 
           console.log(`🎉 DEBUG: Finished processing scroll ${elementType}s in batch`);
 
@@ -213,6 +252,7 @@ class ContentFilterBase {
 
       if (request.action === 'startFiltering') {
         console.log('🚀 DEBUG: Starting filtering with topics:', request.topics);
+        this.resetStatistics();
         this.isFilteringActive = true;
         processElementsFunction(request.topics);
         startScrollMonitoringFunction(request.topics);
@@ -229,6 +269,16 @@ class ContentFilterBase {
         sendResponse({
           isActive: this.isFilteringActive,
           topics: this.currentTopics
+        });
+      }
+
+      if (request.action === 'getStatistics') {
+        sendResponse({
+          statistics: {
+            totalPosts: this.statistics.totalPosts,
+            shownPosts: this.statistics.shownPosts,
+            filteredPosts: this.statistics.filteredPosts
+          }
         });
       }
 

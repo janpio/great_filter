@@ -11,10 +11,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const statusText = document.getElementById('statusText');
   const statusDetails = document.getElementById('statusDetails');
   const currentTopics = document.getElementById('currentTopics');
+  const currentTabStats = document.getElementById('currentTabStats');
+  const globalApiStats = document.getElementById('globalApiStats');
   let isFiltering = false;
 
   loadSavedTopics();
   checkCurrentFilteringState();
+  updateStatistics();
 
   let originalTopics = '';
 
@@ -195,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
     filterButton.textContent = 'Stop Filtering';
     filterButton.style.backgroundColor = '#dc3545';
     setStatus('running', 'Filtering active', '', topics);
+    setTimeout(updateStatistics, 1000);
   }
 
   async function stopFiltering() {
@@ -241,11 +245,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  async function updateStatistics() {
+    console.log('📊 POPUP DEBUG: Requesting statistics...');
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'getCurrentTabStats'
+      });
+
+      console.log('📊 POPUP DEBUG: Received response:', response);
+
+      if (response) {
+        const stats = response.statistics;
+        const globalCount = response.globalApiRequestCount;
+
+        console.log('📊 POPUP DEBUG: Updating UI with stats:', stats, 'global:', globalCount);
+        currentTabStats.textContent = `Showing ${stats.shownPosts} of ${stats.totalPosts} posts`;
+        globalApiStats.textContent = globalCount.toString();
+      }
+    } catch (error) {
+      console.log('Could not get statistics:', error);
+      currentTabStats.textContent = 'Showing 0 of 0 posts';
+      globalApiStats.textContent = '0';
+    }
+  }
+
 
   chrome.runtime.onMessage.addListener((request) => {
     if (request.action === 'filteringStarted') {
       console.log('Auto-filtering started with topics:', request.topics);
       startFiltering(request.topics);
+    }
+
+    if (request.action === 'tabStatsUpdated') {
+      console.log('Statistics updated:', request.statistics);
+      updateStatistics();
     }
   });
 

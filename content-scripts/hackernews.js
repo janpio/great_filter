@@ -154,6 +154,9 @@ class HackerNewsContentFilter extends ContentFilterBase {
 
       console.log(`🚀 Great Filter: Processing ${elements.length} ${elementType}s in single batch`);
 
+      this.statistics.totalPosts += elements.length;
+      console.log('📊 DEBUG: Incremented totalPosts by', elements.length, 'new total:', this.statistics.totalPosts);
+
       elements.forEach(element => {
         this.processedItems.add(element.title);
         this.blurWaitingElement(element);
@@ -182,13 +185,17 @@ class HackerNewsContentFilter extends ContentFilterBase {
       response.results.forEach((result, index) => {
         const element = elements[index];
         if (result.isAllowed) {
+          this.statistics.shownPosts++;
           this.unblurElement(element);
           console.log(`✅ Great Filter: ${elementType} ${index + 1} allowed: "${element.title}"`);
         } else {
+          this.statistics.filteredPosts++;
           this.blurBlockedElement(element);
           console.log(`🚫 Great Filter: ${elementType} ${index + 1} blocked: "${element.title}"`);
         }
       });
+
+      this.sendStatsUpdate();
 
       console.log(`🎉 DEBUG: Finished processing all ${elementType}s in batch`);
     } catch (error) {
@@ -209,6 +216,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
       if (newElements.length > 0) {
         console.log(`📜 DEBUG: Found ${newElements.length} new ${elementType}s on scroll`);
         this.isScrollProcessing = true;
+
+        this.statistics.totalPosts += newElements.length;
 
         try {
           newElements.forEach(element => {
@@ -247,13 +256,17 @@ class HackerNewsContentFilter extends ContentFilterBase {
             this.processedItems.add(element.title);
 
             if (result.isAllowed) {
+              this.statistics.shownPosts++;
               this.unblurElement(element);
               console.log(`✅ Great Filter: Scroll ${elementType} ${index + 1} allowed: "${element.title}"`);
             } else {
+              this.statistics.filteredPosts++;
               this.blurBlockedElement(element);
               console.log(`🚫 Great Filter: Scroll ${elementType} ${index + 1} blocked: "${element.title}"`);
             }
           });
+
+          this.sendStatsUpdate();
 
           console.log(`🎉 DEBUG: Finished processing scroll ${elementType}s in batch`);
 
