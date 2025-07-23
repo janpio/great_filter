@@ -25,16 +25,16 @@ describe('HackerNews Content Filter', () => {
   describe('Story Extraction', () => {
     test('should extract story titles from HackerNews HTML', () => {
       const filter = new HackerNewsContentFilter();
-      const stories = filter.extractStoryElements();
+      const items = filter.extractItemElements();
 
-      expect(stories.length).toBeGreaterThan(0);
-      expect(stories.length).toBeLessThanOrEqual(90);
-      expect(stories.length).toBeGreaterThanOrEqual(30);
+      expect(items.length).toBeGreaterThan(0);
+      expect(items.length).toBeLessThanOrEqual(90);
+      expect(items.length).toBeGreaterThanOrEqual(30);
     });
 
     test('should extract correct story titles', () => {
       const filter = new HackerNewsContentFilter();
-      const stories = filter.extractStoryElements();
+      const items = filter.extractItemElements();
 
       const expectedTitles = [
         "I'm Peter Roberts, immigration attorney who does work for YC and startups. AMA",
@@ -43,28 +43,28 @@ describe('HackerNews Content Filter', () => {
       ];
 
       expectedTitles.forEach(title => {
-        expect(stories.some(story => story.title === title)).toBe(true);
+        expect(items.some(item => item.title === title)).toBe(true);
       });
     });
 
     test('should find title elements using correct selectors', () => {
       const filter = new HackerNewsContentFilter();
-      const stories = filter.extractStoryElements();
+      const items = filter.extractItemElements();
 
-      ContentFilterTestUtils.expectBasicElementStructure(stories);
+      ContentFilterTestUtils.expectBasicElementStructure(items);
       
-      stories.forEach(story => {
-        expect(story.title.length).toBeGreaterThan(5);
-        expect(story.titleElement).toBeDefined();
-        expect(story.usedSelector).toBeDefined();
+      items.forEach(item => {
+        expect(item.title.length).toBeGreaterThan(5);
+        expect(item.titleElement).toBeDefined();
+        expect(item.usedSelector).toBeDefined();
       });
     });
 
     test('should return consistent story count', () => {
       const filter = new HackerNewsContentFilter();
       
-      const firstRun = filter.extractStoryElements();
-      const secondRun = filter.extractStoryElements();
+      const firstRun = filter.extractItemElements();
+      const secondRun = filter.extractItemElements();
       
       expect(firstRun.length).toBeGreaterThan(0);
       expect(secondRun.length).toEqual(firstRun.length);
@@ -72,11 +72,11 @@ describe('HackerNews Content Filter', () => {
 
     test('should find stories with correct container structure', () => {
       const filter = new HackerNewsContentFilter();
-      const stories = filter.extractStoryElements();
+      const items = filter.extractItemElements();
 
-      stories.forEach(story => {
-        expect(story.container.classList.contains('athing')).toBe(true);
-        expect(story.container.classList.contains('submission')).toBe(true);
+      items.forEach(item => {
+        expect(item.container.classList.contains('athing')).toBe(true);
+        expect(item.container.classList.contains('submission')).toBe(true);
       });
     });
   });
@@ -88,7 +88,7 @@ describe('HackerNews Content Filter', () => {
       
       await ContentFilterTestUtils.testFilteringIntegration(
         filter, 
-        'processStoriesForFiltering', 
+        'processItemsForFiltering', 
         topics
       );
     });
@@ -99,7 +99,7 @@ describe('HackerNews Content Filter', () => {
       
       await ContentFilterTestUtils.testErrorHandling(
         filter,
-        'processStoriesForFiltering',
+        'processItemsForFiltering',
         topics
       );
     });

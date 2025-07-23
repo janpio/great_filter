@@ -5,9 +5,9 @@ class YouTubeContentFilter extends ContentFilterBase {
     super();
   }
 
-  extractVideoElements() {
-    console.log('🔍 DEBUG: Starting extractVideoElements()');
-    const videoElements = [];
+  extractItemElements() {
+    console.log('🔍 DEBUG: Starting extractItemElements()');
+    const itemElements = [];
     const processedContainers = new Set();
 
     const containerSelectors = [
@@ -70,15 +70,15 @@ class YouTubeContentFilter extends ContentFilterBase {
           console.log(`🔍 DEBUG: Extracted title: "${title}" (selector: ${usedSelector})`);
 
           if (title && !this.processedItems.has(title)) {
-            console.log(`🔍 DEBUG: Adding new video: "${title}"`);
-            videoElements.push({
+            console.log(`🔍 DEBUG: Adding new item: "${title}"`);
+            itemElements.push({
               title: title,
               container: container,
               titleElement: titleElement,
               usedSelector: usedSelector
             });
           } else if (title && this.processedItems.has(title)) {
-            console.log(`🔍 DEBUG: Skipping already processed video: "${title}"`);
+            console.log(`🔍 DEBUG: Skipping already processed item: "${title}"`);
           } else {
             console.log('🔍 DEBUG: No title found for container');
           }
@@ -88,19 +88,19 @@ class YouTubeContentFilter extends ContentFilterBase {
       });
     });
 
-    console.log(`🔍 DEBUG: Total video elements found: ${videoElements.length}`);
-    return videoElements;
+    console.log(`🔍 DEBUG: Total item elements found: ${itemElements.length}`);
+    return itemElements;
   }
 
-  async processVideosForFiltering(topics) {
-    const videoElements = this.extractVideoElements();
+  async processItemsForFiltering(topics) {
+    const itemElements = this.extractItemElements();
 
-    if (videoElements.length > 0) {
+    if (itemElements.length > 0) {
       chrome.runtime.sendMessage({
         action: 'contentProcessing'
       });
 
-      await this.processElementsBatch(videoElements, topics, 'video');
+      await this.processElementsBatch(itemElements, topics, 'item');
 
       chrome.runtime.sendMessage({
         action: 'filteringComplete'
@@ -109,20 +109,20 @@ class YouTubeContentFilter extends ContentFilterBase {
   }
 
   init() {
-    console.log('🔍 DEBUG: Initial video element check...');
-    this.extractVideoElements();
+    console.log('🔍 DEBUG: Initial item element check...');
+    this.extractItemElements();
 
     this.setupMessageListener(
-      (topics) => this.processVideosForFiltering(topics),
-      (topics) => this.startScrollMonitoring(topics, () => this.extractVideoElements(), 'video')
+      (topics) => this.processItemsForFiltering(topics),
+      (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'item')
     );
 
     this.waitForElements(
-      () => this.extractVideoElements(),
+      () => this.extractItemElements(),
       () => {
         this.checkFilteringState(
-          (topics) => this.processVideosForFiltering(topics),
-          (topics) => this.startScrollMonitoring(topics, () => this.extractVideoElements(), 'video')
+          (topics) => this.processItemsForFiltering(topics),
+          (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'item')
         );
       }
     );

@@ -91,7 +91,7 @@ class ContentFilterBase {
     container.title = 'Allowed: Element kept';
   }
 
-  async processElementsBatch(elements, topics, elementType = 'video') {
+  async processElementsBatch(elements, topics, elementType = 'item') {
     console.log(`🚀 DEBUG: Starting processElementsBatch for ${elementType}s`);
     console.log('🚀 DEBUG: Topics provided:', topics);
 
@@ -114,8 +114,8 @@ class ContentFilterBase {
       console.log(`📡 DEBUG: Sending batch of ${elements.length} ${elementType}s to background script`);
 
       const response = await chrome.runtime.sendMessage({
-        action: 'checkVideoTitlesBatch',
-        videos: elements.map((element, index) => ({
+        action: 'checkItemTitlesBatch',
+        items: elements.map((element, index) => ({
           index: index + 1,
           title: element.title,
           container: element.container
@@ -153,7 +153,7 @@ class ContentFilterBase {
   }
 
 
-  startScrollMonitoring(topics, extractElementsFunction, elementType = 'video') {
+  startScrollMonitoring(topics, extractElementsFunction, elementType = 'item') {
     this.currentTopics = topics;
     this.extractElementsFunction = extractElementsFunction;
 
@@ -275,8 +275,8 @@ class ContentFilterBase {
       });
 
       const response = await chrome.runtime.sendMessage({
-        action: 'checkVideoTitlesBatch',
-        videos: newElements.map((element, index) => ({
+        action: 'checkItemTitlesBatch',
+        items: newElements.map((element, index) => ({
           index: index + 1,
           title: element.title,
           container: element.container

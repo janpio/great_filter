@@ -5,9 +5,9 @@ class HackerNewsContentFilter extends ContentFilterBase {
     super();
   }
 
-  extractStoryElements() {
-    console.log('🔍 DEBUG: Starting extractStoryElements()');
-    const storyElements = [];
+  extractItemElements() {
+    console.log('🔍 DEBUG: Starting extractItemElements()');
+    const itemElements = [];
     const processedContainers = new Set();
 
     const containerSelectors = [
@@ -64,10 +64,10 @@ class HackerNewsContentFilter extends ContentFilterBase {
 
               const relatedElements = this.getStoryElements(container);
 
-              storyElements.push({
+              itemElements.push({
                 title: title,
                 container: container,
-                storyElements: relatedElements,
+                itemElements: relatedElements,
                 titleElement: titleElement,
                 usedSelector: usedSelector
               });
@@ -83,8 +83,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
       });
     });
 
-    console.log(`🔍 DEBUG: Total story elements found: ${storyElements.length}`);
-    return storyElements;
+    console.log(`🔍 DEBUG: Total story elements found: ${itemElements.length}`);
+    return itemElements;
   }
 
   getStoryElements(titleRow) {
@@ -109,8 +109,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
   }
 
   blurWaitingElement(element) {
-    if (element.storyElements) {
-      element.storyElements.forEach(el => {
+    if (element.itemElements) {
+      element.itemElements.forEach(el => {
         if (!el.style.filter) {
           el.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
           el.style.opacity = VISUAL_EFFECTS.WAITING_OPACITY;
@@ -124,8 +124,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
   }
 
   blurBlockedElement(element) {
-    if (element.storyElements) {
-      element.storyElements.forEach(el => {
+    if (element.itemElements) {
+      element.itemElements.forEach(el => {
         el.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
         el.style.opacity = VISUAL_EFFECTS.BLOCKED_OPACITY;
         el.style.pointerEvents = 'none';
@@ -137,8 +137,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
   }
 
   unblurElement(element) {
-    if (element.storyElements) {
-      element.storyElements.forEach(el => {
+    if (element.itemElements) {
+      element.itemElements.forEach(el => {
         el.style.filter = '';
         el.style.opacity = VISUAL_EFFECTS.ALLOWED_OPACITY;
         el.style.pointerEvents = '';
@@ -172,8 +172,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
       console.log(`📡 DEBUG: Sending batch of ${elements.length} ${elementType}s to background script`);
 
       const response = await chrome.runtime.sendMessage({
-        action: 'checkVideoTitlesBatch',
-        videos: elements.map((element, index) => ({
+        action: 'checkItemTitlesBatch',
+        items: elements.map((element, index) => ({
           index: index + 1,
           title: element.title,
           container: element.container
@@ -211,15 +211,15 @@ class HackerNewsContentFilter extends ContentFilterBase {
   }
 
 
-  async processStoriesForFiltering(topics) {
-    const storyElements = this.extractStoryElements();
+  async processItemsForFiltering(topics) {
+    const itemElements = this.extractItemElements();
 
-    if (storyElements.length > 0) {
+    if (itemElements.length > 0) {
       chrome.runtime.sendMessage({
         action: 'contentProcessing'
       });
 
-      await this.processElementsBatch(storyElements, topics, 'story');
+      await this.processElementsBatch(itemElements, topics, 'item');
 
       chrome.runtime.sendMessage({
         action: 'filteringComplete'
@@ -229,19 +229,19 @@ class HackerNewsContentFilter extends ContentFilterBase {
 
   init() {
     console.log('🔍 DEBUG: Initial story element check...');
-    this.extractStoryElements();
+    this.extractItemElements();
 
     this.setupMessageListener(
-      (topics) => this.processStoriesForFiltering(topics),
-      (topics) => this.startScrollMonitoring(topics, () => this.extractStoryElements(), 'story')
+      (topics) => this.processItemsForFiltering(topics),
+      (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'item')
     );
 
     this.waitForElements(
-      () => this.extractStoryElements(),
+      () => this.extractItemElements(),
       () => {
         this.checkFilteringState(
-          (topics) => this.processStoriesForFiltering(topics),
-          (topics) => this.startScrollMonitoring(topics, () => this.extractStoryElements(), 'story')
+          (topics) => this.processItemsForFiltering(topics),
+          (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'item')
         );
       }
     );

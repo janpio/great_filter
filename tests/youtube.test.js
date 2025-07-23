@@ -25,15 +25,15 @@ describe('YouTube Content Filter', () => {
   describe('Video Extraction', () => {
     test('should extract video titles from YouTube HTML', () => {
       const filter = new YouTubeContentFilter();
-      const videos = filter.extractVideoElements();
+      const items = filter.extractItemElements();
 
-      expect(videos.length).toBeGreaterThan(0);
-      expect(videos.length).toBe(9); // 3 regular videos + 6 shorts (each short has 2 containers)
+      expect(items.length).toBeGreaterThan(0);
+      expect(items.length).toBe(9); // 3 regular videos + 6 shorts (each short has 2 containers)
     });
 
     test('should extract correct video titles', () => {
       const filter = new YouTubeContentFilter();
-      const videos = filter.extractVideoElements();
+      const items = filter.extractItemElements();
 
       const expectedTitles = [
         "Extended Highlights - Stage 13 - Tour de France 2025",
@@ -42,29 +42,29 @@ describe('YouTube Content Filter', () => {
       ];
 
       expectedTitles.forEach(title => {
-        expect(videos.some(video => video.title === title)).toBe(true);
+        expect(items.some(item => item.title === title)).toBe(true);
       });
     });
 
     test('should find video elements using correct selectors', () => {
       const filter = new YouTubeContentFilter();
-      const videos = filter.extractVideoElements();
+      const items = filter.extractItemElements();
 
       ContentFilterTestUtils.expectBasicElementStructure(videos);
 
-      videos.forEach(video => {
-        expect(video.title.length).toBeGreaterThan(5);
-        expect(video.titleElement).toBeDefined();
-        expect(video.usedSelector).toBeDefined();
-        expect(video.container).toBeDefined();
+      items.forEach(item => {
+        expect(item.title.length).toBeGreaterThan(5);
+        expect(item.titleElement).toBeDefined();
+        expect(item.usedSelector).toBeDefined();
+        expect(item.container).toBeDefined();
       });
     });
 
     test('should return consistent video count', () => {
       const filter = new YouTubeContentFilter();
 
-      const firstRun = filter.extractVideoElements();
-      const secondRun = filter.extractVideoElements();
+      const firstRun = filter.extractItemElements();
+      const secondRun = filter.extractItemElements();
 
       expect(firstRun.length).toBeGreaterThan(0);
       expect(secondRun.length).toEqual(firstRun.length);
@@ -72,17 +72,17 @@ describe('YouTube Content Filter', () => {
 
     test('should find videos with correct container structure', () => {
       const filter = new YouTubeContentFilter();
-      const videos = filter.extractVideoElements();
+      const items = filter.extractItemElements();
 
       // Filter for regular videos only (not shorts)
-      const regularVideos = videos.filter(video =>
-        video.container.matches('ytd-rich-grid-media')
+      const regularItems = items.filter(item =>
+        item.container.matches('ytd-rich-grid-media')
       );
 
-      expect(regularVideos.length).toBe(3);
-      regularVideos.forEach(video => {
-        expect(video.container.matches('ytd-rich-grid-media')).toBe(true);
-        expect(video.titleElement.id).toBe('video-title');
+      expect(regularItems.length).toBe(3);
+      regularItems.forEach(item => {
+        expect(item.container.matches('ytd-rich-grid-media')).toBe(true);
+        expect(item.titleElement.id).toBe('video-title');
       });
     });
   });
@@ -94,7 +94,7 @@ describe('YouTube Content Filter', () => {
 
       await ContentFilterTestUtils.testFilteringIntegration(
         filter,
-        'processVideosForFiltering',
+        'processItemsForFiltering',
         topics
       );
     });
@@ -105,7 +105,7 @@ describe('YouTube Content Filter', () => {
 
       await ContentFilterTestUtils.testErrorHandling(
         filter,
-        'processVideosForFiltering',
+        'processItemsForFiltering',
         topics
       );
     });
@@ -118,12 +118,12 @@ describe('YouTube Content Filter', () => {
         mockAPI.mixedResponse()
       );
 
-      await filter.processVideosForFiltering(['cycling', 'entertainment']);
+      await filter.processItemsForFiltering(['cycling', 'entertainment']);
 
       expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          action: 'checkVideoTitlesBatch',
-          videos: expect.arrayContaining([
+          action: 'checkItemTitlesBatch',
+          items: expect.arrayContaining([
             expect.objectContaining({
               title: expect.stringContaining('Tour de France')
             })
@@ -137,56 +137,56 @@ describe('YouTube Content Filter', () => {
   describe('YouTube-Specific Features', () => {
     test('should handle ytd-rich-grid-media containers', () => {
       const filter = new YouTubeContentFilter();
-      const videos = filter.extractVideoElements();
+      const items = filter.extractItemElements();
 
       const gridMediaElements = document.querySelectorAll('ytd-rich-grid-media');
-      const regularVideos = videos.filter(video =>
-        video.container.matches('ytd-rich-grid-media')
+      const regularItems = items.filter(item =>
+        item.container.matches('ytd-rich-grid-media')
       );
 
-      expect(regularVideos.length).toBe(gridMediaElements.length);
-      regularVideos.forEach(video => {
-        expect(video.container.matches('ytd-rich-grid-media')).toBe(true);
+      expect(regularItems.length).toBe(gridMediaElements.length);
+      regularItems.forEach(item => {
+        expect(item.container.matches('ytd-rich-grid-media')).toBe(true);
       });
     });
 
     test('should extract videos from different video types', () => {
       const filter = new YouTubeContentFilter();
-      const videos = filter.extractVideoElements();
+      const items = filter.extractItemElements();
 
       const expectedVideoTypes = ['cycling', 'entertainment', 'music'];
 
-      videos.forEach(video => {
-        expect(video.title).toBeTruthy();
-        expect(video.title.length).toBeGreaterThan(0);
+      items.forEach(item => {
+        expect(item.title).toBeTruthy();
+        expect(item.title.length).toBeGreaterThan(0);
       });
     });
 
     test('should handle yt-formatted-string title elements', () => {
       const filter = new YouTubeContentFilter();
-      const videos = filter.extractVideoElements();
+      const items = filter.extractItemElements();
 
       // Filter for regular videos only (not shorts)
-      const regularVideos = videos.filter(video =>
-        video.container.matches('ytd-rich-grid-media')
+      const regularItems = items.filter(item =>
+        item.container.matches('ytd-rich-grid-media')
       );
 
-      regularVideos.forEach(video => {
-        expect(video.titleElement.id).toBe('video-title');
-        expect(video.titleElement.tagName.toLowerCase()).toBe('yt-formatted-string');
+      regularItems.forEach(item => {
+        expect(item.titleElement.id).toBe('video-title');
+        expect(item.titleElement.tagName.toLowerCase()).toBe('yt-formatted-string');
       });
     });
 
     test('should find specific video titles mentioned by user', () => {
       const filter = new YouTubeContentFilter();
-      const videos = filter.extractVideoElements();
+      const items = filter.extractItemElements();
 
       const userMentionedTitles = [
         "All The Ghosts You Will Be"
       ];
 
       userMentionedTitles.forEach(title => {
-        expect(videos.some(video => video.title === title)).toBe(true);
+        expect(items.some(item => item.title === title)).toBe(true);
       });
     });
   });

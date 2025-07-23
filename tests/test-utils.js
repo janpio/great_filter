@@ -55,8 +55,8 @@ class ContentFilterTestUtils {
 
   static expectFilteringAPICall(expectedTopics, expectedElementType = 'post') {
     expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-      action: 'checkVideoTitlesBatch',
-      videos: expect.arrayContaining([
+      action: 'checkItemTitlesBatch',
+      items: expect.arrayContaining([
         expect.objectContaining({
           index: expect.any(Number),
           title: expect.any(String),

@@ -69,8 +69,8 @@ async function getCurrentTabId() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('📨 BACKGROUND DEBUG: Message received:', request);
 
-  if (request.action === 'checkVideoTitle') {
-    console.log('🔧 BACKGROUND DEBUG: Handling checkVideoTitle request');
+  if (request.action === 'checkItemTitle') {
+    console.log('🔧 BACKGROUND DEBUG: Handling checkItemTitle request');
 
     incrementGlobalApiCounter(1);
     apiCallQueue.push({
@@ -86,12 +86,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  if (request.action === 'checkVideoTitlesBatch') {
-    console.log('🔧 BACKGROUND DEBUG: Handling checkVideoTitlesBatch request');
-    console.log('🔧 BACKGROUND DEBUG: Batch size:', request.videos.length);
+  if (request.action === 'checkItemTitlesBatch') {
+    console.log('🔧 BACKGROUND DEBUG: Handling checkItemTitlesBatch request');
+    console.log('🔧 BACKGROUND DEBUG: Batch size:', request.items.length);
 
-    incrementGlobalApiCounter(request.videos.length);
-    handleBatchVideoTitleCheck(request.videos, request.topics, sendResponse);
+    incrementGlobalApiCounter(request.items.length);
+    handleBatchItemTitleCheck(request.items, request.topics, sendResponse);
 
     return true;
   }
@@ -258,7 +258,7 @@ async function processApiQueue() {
 
     try {
       lastApiCall = Date.now();
-      const result = await handleVideoTitleCheck(title, topics);
+      const result = await handleItemTitleCheck(title, topics);
       console.log('🔧 BACKGROUND DEBUG: Sending response:', result);
       sendResponse(result);
     } catch (error) {
@@ -271,8 +271,8 @@ async function processApiQueue() {
   console.log('🔧 BACKGROUND DEBUG: Finished processing API queue');
 }
 
-async function handleVideoTitleCheck(title, topics) {
-  console.log('🔧 BACKGROUND DEBUG: Starting handleVideoTitleCheck');
+async function handleItemTitleCheck(title, topics) {
+  console.log('🔧 BACKGROUND DEBUG: Starting handleItemTitleCheck');
   console.log('🔧 BACKGROUND DEBUG: Title:', title);
   console.log('🔧 BACKGROUND DEBUG: Topics:', topics);
 
@@ -288,9 +288,9 @@ async function handleVideoTitleCheck(title, topics) {
     }
 
     const topicsString = topics.join(', ');
-    const prompt = `Does this video title relate to any of these topics: ${topicsString}?
+    const prompt = `Does this item title relate to any of these topics: ${topicsString}?
 
-Video title: "${title}"
+Item title: "${title}"
 
 Answer with only "Yes" or "No".`;
 
@@ -333,7 +333,7 @@ Answer with only "Yes" or "No".`;
       const isAllowed = answer.includes('yes');
 
       console.log('🔧 BACKGROUND DEBUG: API answer:', answer);
-      console.log('🔧 BACKGROUND DEBUG: Video allowed:', isAllowed);
+      console.log('🔧 BACKGROUND DEBUG: Item allowed:', isAllowed);
 
       return {
         title: title,
@@ -345,14 +345,14 @@ Answer with only "Yes" or "No".`;
       throw new Error('Invalid API response: ' + (data.error?.message || 'Unknown error'));
     }
   } catch (error) {
-    console.error('🔧 BACKGROUND DEBUG: Error in handleVideoTitleCheck:', error);
+    console.error('🔧 BACKGROUND DEBUG: Error in handleItemTitleCheck:', error);
     throw error;
   }
 }
 
-async function handleBatchVideoTitleCheck(videos, topics, sendResponse) {
-  console.log('🔧 BACKGROUND DEBUG: Starting handleBatchVideoTitleCheck');
-  console.log('🔧 BACKGROUND DEBUG: Videos count:', videos.length);
+async function handleBatchItemTitleCheck(items, topics, sendResponse) {
+  console.log('🔧 BACKGROUND DEBUG: Starting handleBatchItemTitleCheck');
+  console.log('🔧 BACKGROUND DEBUG: Items count:', items.length);
   console.log('🔧 BACKGROUND DEBUG: Topics:', topics);
 
   try {
@@ -368,7 +368,7 @@ async function handleBatchVideoTitleCheck(videos, topics, sendResponse) {
 
     const topicsString = topics.join(', ');
 
-    let prompt = `Does each of these video titles relate to any of these topics: ${topicsString}?
+    let prompt = `Does each of these item titles relate to any of these topics: ${topicsString}?
 
 Please answer with only numbered responses in the format:
 1. YES
@@ -376,11 +376,11 @@ Please answer with only numbered responses in the format:
 3. YES
 etc.
 
-Video titles:
+Item titles:
 `;
 
-    videos.forEach((video, index) => {
-      prompt += `${index + 1}. "${video.title}"\n`;
+    items.forEach((item, index) => {
+      prompt += `${index + 1}. "${item.title}"\n`;
     });
 
     console.log('🔧 BACKGROUND DEBUG: Full batch prompt created:');
@@ -427,8 +427,8 @@ Video titles:
 
       console.log('🔧 BACKGROUND DEBUG: Parsing response lines:', lines);
 
-      for (let i = 0; i < videos.length; i++) {
-        const video = videos[i];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
         let isAllowed = false;
 
         const expectedNumber = i + 1;
@@ -440,13 +440,13 @@ Video titles:
         if (responseLine) {
           const answer = responseLine.toLowerCase();
           isAllowed = answer.includes('yes');
-          console.log(`🔧 BACKGROUND DEBUG: Video ${expectedNumber} "${video.title}" -> ${responseLine} -> ${isAllowed ? 'ALLOWED' : 'BLOCKED'}`);
+          console.log(`🔧 BACKGROUND DEBUG: Item ${expectedNumber} "${item.title}" -> ${responseLine} -> ${isAllowed ? 'ALLOWED' : 'BLOCKED'}`);
         } else {
-          console.warn(`🔧 BACKGROUND DEBUG: No response found for video ${expectedNumber}, defaulting to BLOCKED`);
+          console.warn(`🔧 BACKGROUND DEBUG: No response found for item ${expectedNumber}, defaulting to BLOCKED`);
         }
 
         results.push({
-          title: video.title,
+          title: item.title,
           isAllowed: isAllowed,
           responseLine: responseLine || 'No response'
         });
@@ -463,7 +463,7 @@ Video titles:
       throw new Error('Invalid API response: ' + (data.error?.message || 'Unknown error'));
     }
   } catch (error) {
-    console.error('🔧 BACKGROUND DEBUG: Error in handleBatchVideoTitleCheck:', error);
+    console.error('🔧 BACKGROUND DEBUG: Error in handleBatchItemTitleCheck:', error);
     sendResponse({ error: error.message });
   }
 }
