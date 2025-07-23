@@ -31,7 +31,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   let originalTopics = '';
 
+  function autoResizeTextarea() {
+    topicsTextarea.style.height = '40px';
+    const scrollHeight = topicsTextarea.scrollHeight;
+    const maxHeight = 200;
+    const newHeight = Math.min(scrollHeight, maxHeight);
+    topicsTextarea.style.height = newHeight + 'px';
+  }
+
   topicsTextarea.addEventListener('input', function() {
+    autoResizeTextarea();
+
     const currentTopics = topicsTextarea.value.trim();
     if (currentTopics !== originalTopics) {
       saveButton.classList.remove('inactive');
@@ -137,6 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const topicsText = result.allowedTopics.join('\n');
         topicsTextarea.value = topicsText;
         originalTopics = topicsText;
+        autoResizeTextarea();
       }
       saveButton.classList.remove('active');
       saveButton.classList.add('inactive');
