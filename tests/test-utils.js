@@ -10,6 +10,16 @@ class ContentFilterTestUtils {
       'global.$1 = $1;'
     );
     
+    // Define VISUAL_EFFECTS in global scope for tests
+    global.VISUAL_EFFECTS = {
+      BLUR_RADIUS: '6px',
+      GRAYSCALE_AMOUNT: '100%',
+      BRIGHTNESS_LEVEL: '0.2',
+      WAITING_OPACITY: '0.8',
+      BLOCKED_OPACITY: '0',
+      ALLOWED_OPACITY: ''
+    };
+    
     eval(scriptWithoutInit);
   }
 
@@ -53,8 +63,12 @@ class ContentFilterTestUtils {
     });
   }
 
-  static expectFilteringAPICall(expectedTopics, expectedElementType = 'post') {
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+  static expectFilteringAPICall(expectedTopics) {
+    const calls = chrome.runtime.sendMessage.mock.calls;
+    const batchCall = calls.find(call => call[0].action === 'checkItemTitlesBatch');
+    
+    expect(batchCall).toBeDefined();
+    expect(batchCall[0]).toEqual({
       action: 'checkItemTitlesBatch',
       items: expect.arrayContaining([
         expect.objectContaining({

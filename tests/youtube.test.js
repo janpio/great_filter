@@ -50,7 +50,7 @@ describe('YouTube Content Filter', () => {
       const filter = new YouTubeContentFilter();
       const items = filter.extractItemElements();
 
-      ContentFilterTestUtils.expectBasicElementStructure(videos);
+      ContentFilterTestUtils.expectBasicElementStructure(items);
 
       items.forEach(item => {
         expect(item.title.length).toBeGreaterThan(5);
