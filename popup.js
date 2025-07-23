@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const topics = result.allowedTopics || [];
 
     if (topics.length === 0) {
-      alert('Please configure preferences first');
+      showMessage('Please configure preferences first');
       return;
     }
 
@@ -98,15 +98,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         await chrome.tabs.reload(tabs[0].id);
 
-        filterMessage.textContent = 'Filtering started!';
-        filterMessage.style.display = 'block';
-        setTimeout(() => {
-          filterMessage.style.display = 'none';
-        }, UI_TIMEOUTS.POPUP_MESSAGE_DISPLAY);
+        showMessage('Filtering started!');
       }
     } catch (error) {
       console.error('Error starting filter:', error);
-      alert('Error starting filter. Make sure you are on a supported website: ' + error.message);
+      showMessage('Error starting filter. Make sure you are on a supported website.');
     }
   });
 
@@ -119,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const topics = topicsText.split('\n').filter(topic => topic.trim() !== '').map(topic => topic.trim());
 
     if (topics.length === 0) {
-      alert('Please enter at least one topic');
+      showMessage('Please enter at least one topic');
       return;
     }
 
@@ -132,10 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
       saveButton.classList.remove('active');
       saveButton.classList.add('inactive');
 
-      savedMessage.style.display = 'block';
-      setTimeout(() => {
-        savedMessage.style.display = 'none';
-      }, UI_TIMEOUTS.POPUP_MESSAGE_DISPLAY);
+      showMessage('Preferences saved successfully!');
 
       updateStatus();
 
@@ -147,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('Topics saved:', topics);
     } catch (error) {
       console.error('Error saving topics:', error);
-      alert('Error saving topics: ' + error.message);
+      showMessage('Error saving topics: ' + error.message);
     }
   });
 
@@ -228,7 +221,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function startFiltering(topics) {
     isFiltering = true;
     filterButton.textContent = 'Stop Filtering';
-    filterButton.style.backgroundColor = '#dc3545';
+    filterButton.classList.remove('btn-primary');
+    filterButton.classList.add('btn-stop');
     setStatus('running', 'Filtering active', '', topics);
     setTimeout(updateStatistics, UI_TIMEOUTS.STATISTICS_UPDATE_DELAY);
   }
@@ -236,7 +230,8 @@ document.addEventListener('DOMContentLoaded', function() {
   async function stopFiltering() {
     isFiltering = false;
     filterButton.textContent = 'Start Filtering';
-    filterButton.style.backgroundColor = '#2196F3';
+    filterButton.classList.remove('btn-stop');
+    filterButton.classList.add('btn-primary');
 
     try {
       await chrome.storage.local.set({
@@ -374,6 +369,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+
+  function showMessage(text) {
+    const messageEl = document.createElement('div');
+    messageEl.className = 'message';
+    messageEl.textContent = text;
+    document.body.appendChild(messageEl);
+
+    setTimeout(() => {
+      messageEl.remove();
+    }, UI_TIMEOUTS.POPUP_MESSAGE_DISPLAY);
+  }
 
   chrome.runtime.onMessage.addListener((request) => {
     if (request.action === 'filteringStarted') {
