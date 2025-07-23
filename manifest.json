@@ -20,6 +20,7 @@
     },
     {
       "matches": ["https://news.ycombinator.com/*"],
+      "exclude_matches": ["https://news.ycombinator.com/item*"],
       "js": ["shared/content-base.js", "shared/prompts.js", "content-scripts/hackernews.js"],
       "run_at": "document_end"
     }
