@@ -1,5 +1,27 @@
 console.log('🔧 Great Filter: Shared content base loaded');
 
+const POLLING_INTERVALS = {
+  STARTUP_ELEMENT_CHECK: 50,           // How often to check for elements during page load (ms)
+  STARTUP_MAX_ATTEMPTS: 50,            // Maximum attempts to find elements during startup
+  SCROLL_ACTIVE: 100,                  // Fast polling during active scrolling (ms)
+  SCROLL_IDLE: 2000,                   // Slow polling when not scrolling (ms)
+  SCROLL_ACTIVITY_TIMEOUT: 2000,       // Time to wait before considering scrolling "stopped" (ms)
+};
+
+const VISUAL_EFFECTS = {
+  BLUR_RADIUS: '6px',                  // Blur intensity for filtered content
+  GRAYSCALE_AMOUNT: '100%',            // Grayscale level for filtered content
+  BRIGHTNESS_LEVEL: '0.2',             // Brightness reduction for filtered content
+  WAITING_OPACITY: '0.8',              // Opacity while waiting for AI response
+  BLOCKED_OPACITY: '0',                // Opacity for blocked content (hidden)
+  ALLOWED_OPACITY: '',                 // Opacity for allowed content (normal)
+};
+
+const UI_TIMEOUTS = {
+  POPUP_MESSAGE_DISPLAY: 3000,         // How long popup messages stay visible (ms)
+  STATISTICS_UPDATE_DELAY: 1000,       // Delay before updating statistics in popup (ms)
+};
+
 class ContentFilterBase {
   constructor() {
     this.processedItems = new Set();
@@ -42,8 +64,8 @@ class ContentFilterBase {
   blurWaitingElement(container, title) {
     console.log(`⏳ DEBUG: Applying waiting blur to element: "${title}"`);
     if (!container.style.filter) {
-      container.style.filter = 'blur(6px) grayscale(100%) brightness(0.2)';
-      container.style.opacity = '0.8';
+      container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
+      container.style.opacity = VISUAL_EFFECTS.WAITING_OPACITY;
       container.style.pointerEvents = 'none';
       container.title = `Processing: ${title}`;
       console.log('⏳ Great Filter: Applied heavy waiting blur to element:', title);
@@ -53,8 +75,8 @@ class ContentFilterBase {
   }
 
   blurBlockedElement(container, title) {
-    container.style.filter = 'blur(6px) grayscale(100%) brightness(0.2)';
-    container.style.opacity = '0';
+    container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
+    container.style.opacity = VISUAL_EFFECTS.BLOCKED_OPACITY;
     container.style.pointerEvents = 'none';
     console.log(`🚫 DEBUG: Applying blocked blur to element: "${title}"`);
     container.title = `Blocked: ${title}`;
@@ -64,7 +86,7 @@ class ContentFilterBase {
   unblurElement(container) {
     console.log('✅ DEBUG: Removing blur from element');
     container.style.filter = '';
-    container.style.opacity = '';
+    container.style.opacity = VISUAL_EFFECTS.ALLOWED_OPACITY;
     container.style.pointerEvents = '';
     container.title = 'Allowed: Element kept';
   }
@@ -137,11 +159,11 @@ class ContentFilterBase {
 
     this.pollingInterval = setInterval(() => {
       this.pollForNewContent();
-    }, this.isScrollActive ? 200 : 3000);
+    }, this.isScrollActive ? POLLING_INTERVALS.SCROLL_ACTIVE : POLLING_INTERVALS.SCROLL_IDLE);
 
     window.addEventListener('scroll', () => this.updateScrollActivity());
 
-    console.log(`📜 DEBUG: ${elementType} adaptive polling started (200ms active / 3000ms idle)`);
+    console.log(`📜 DEBUG: ${elementType} adaptive polling started (${POLLING_INTERVALS.SCROLL_ACTIVE}ms active / ${POLLING_INTERVALS.SCROLL_IDLE}ms idle)`);
   }
 
   stopScrollMonitoring() {
@@ -170,7 +192,7 @@ class ContentFilterBase {
     this.stopScrollMonitoring();
   }
 
-  waitForElements(extractElementsFunction, callback, maxAttempts = 50, interval = 50) {
+  waitForElements(extractElementsFunction, callback, maxAttempts = POLLING_INTERVALS.STARTUP_MAX_ATTEMPTS, interval = POLLING_INTERVALS.STARTUP_ELEMENT_CHECK) {
     console.log('🔍 DEBUG: Starting element polling...');
     let attempts = 0;
 
@@ -207,7 +229,7 @@ class ContentFilterBase {
       this.isScrollActive = false;
       console.log('📜 DEBUG: Scroll activity ended - switching to idle polling');
       this.adjustPollingInterval();
-    }, 2000);
+    }, POLLING_INTERVALS.SCROLL_ACTIVITY_TIMEOUT);
   }
 
   adjustPollingInterval() {
@@ -215,7 +237,7 @@ class ContentFilterBase {
 
     clearInterval(this.pollingInterval);
 
-    const interval = this.isScrollActive ? 100 : 2000;
+    const interval = this.isScrollActive ? POLLING_INTERVALS.SCROLL_ACTIVE : POLLING_INTERVALS.SCROLL_IDLE;
     console.log(`📜 DEBUG: Adjusting polling interval to ${interval}ms`);
 
     this.pollingInterval = setInterval(() => {

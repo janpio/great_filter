@@ -1,5 +1,10 @@
 const OPENROUTER_API_KEY = CONFIG.OPENROUTER_API_KEY;
 
+const UI_TIMEOUTS = {
+  POPUP_MESSAGE_DISPLAY: 3000,         // How long popup messages stay visible (ms)
+  STATISTICS_UPDATE_DELAY: 1000,       // Delay before updating statistics in popup (ms)
+};
+
 document.addEventListener('DOMContentLoaded', function() {
   const topicsTextarea = document.getElementById('topics');
   const saveButton = document.getElementById('saveButton');
@@ -71,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
         filterMessage.style.display = 'block';
         setTimeout(() => {
           filterMessage.style.display = 'none';
-        }, 3000);
+        }, UI_TIMEOUTS.POPUP_MESSAGE_DISPLAY);
       }
     } catch (error) {
       console.error('Error starting filter:', error);
@@ -104,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
       savedMessage.style.display = 'block';
       setTimeout(() => {
         savedMessage.style.display = 'none';
-      }, 3000);
+      }, UI_TIMEOUTS.POPUP_MESSAGE_DISPLAY);
 
       updateStatus();
 
@@ -198,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
     filterButton.textContent = 'Stop Filtering';
     filterButton.style.backgroundColor = '#dc3545';
     setStatus('running', 'Filtering active', '', topics);
-    setTimeout(updateStatistics, 1000);
+    setTimeout(updateStatistics, UI_TIMEOUTS.STATISTICS_UPDATE_DELAY);
   }
 
   async function stopFiltering() {

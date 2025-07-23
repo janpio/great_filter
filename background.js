@@ -2,6 +2,28 @@ console.log('🔧 Great Filter: Background worker loaded');
 
 importScripts('config.js');
 
+const POLLING_INTERVALS = {
+  STARTUP_ELEMENT_CHECK: 50,           // How often to check for elements during page load (ms)
+  STARTUP_MAX_ATTEMPTS: 50,            // Maximum attempts to find elements during startup
+  SCROLL_ACTIVE: 100,                  // Fast polling during active scrolling (ms)
+  SCROLL_IDLE: 2000,                   // Slow polling when not scrolling (ms)
+  SCROLL_ACTIVITY_TIMEOUT: 2000,       // Time to wait before considering scrolling "stopped" (ms)
+};
+
+const VISUAL_EFFECTS = {
+  BLUR_RADIUS: '6px',                  // Blur intensity for filtered content
+  GRAYSCALE_AMOUNT: '100%',            // Grayscale level for filtered content
+  BRIGHTNESS_LEVEL: '0.2',             // Brightness reduction for filtered content
+  WAITING_OPACITY: '0.8',              // Opacity while waiting for AI response
+  BLOCKED_OPACITY: '0',                // Opacity for blocked content (hidden)
+  ALLOWED_OPACITY: '',                 // Opacity for allowed content (normal)
+};
+
+const UI_TIMEOUTS = {
+  POPUP_MESSAGE_DISPLAY: 3000,         // How long popup messages stay visible (ms)
+  STATISTICS_UPDATE_DELAY: 1000,       // Delay before updating statistics in popup (ms)
+};
+
 let lastApiCall = 0;
 const MIN_API_INTERVAL = 100;
 let apiCallQueue = [];

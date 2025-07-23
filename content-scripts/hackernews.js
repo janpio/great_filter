@@ -112,8 +112,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
     if (element.storyElements) {
       element.storyElements.forEach(el => {
         if (!el.style.filter) {
-          el.style.filter = 'blur(6px) grayscale(100%) brightness(0.2)';
-          el.style.opacity = '0.8';
+          el.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
+          el.style.opacity = VISUAL_EFFECTS.WAITING_OPACITY;
           el.style.pointerEvents = 'none';
         }
       });
@@ -126,8 +126,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
   blurBlockedElement(element) {
     if (element.storyElements) {
       element.storyElements.forEach(el => {
-        el.style.filter = 'blur(6px) grayscale(100%) brightness(0.2)';
-        el.style.opacity = '0';
+        el.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
+        el.style.opacity = VISUAL_EFFECTS.BLOCKED_OPACITY;
         el.style.pointerEvents = 'none';
       });
       console.log('🚫 Great Filter: Applied blocked blur to story elements:', element.title);
@@ -140,7 +140,7 @@ class HackerNewsContentFilter extends ContentFilterBase {
     if (element.storyElements) {
       element.storyElements.forEach(el => {
         el.style.filter = '';
-        el.style.opacity = '';
+        el.style.opacity = VISUAL_EFFECTS.ALLOWED_OPACITY;
         el.style.pointerEvents = '';
       });
       console.log('✅ Great Filter: Removed blur from story elements:', element.title);
