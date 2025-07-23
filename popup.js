@@ -20,6 +20,17 @@ document.addEventListener('DOMContentLoaded', function() {
   const inputTokens = document.getElementById('inputTokens');
   const outputTokens = document.getElementById('outputTokens');
   const totalCost = document.getElementById('totalCost');
+
+  const todayStats = document.getElementById('todayStats');
+  const todayInputTokens = document.getElementById('todayInputTokens');
+  const todayOutputTokens = document.getElementById('todayOutputTokens');
+  const todayCost = document.getElementById('todayCost');
+
+  const totalTabStats = document.getElementById('totalTabStats');
+  const totalInputTokens = document.getElementById('totalInputTokens');
+  const totalOutputTokens = document.getElementById('totalOutputTokens');
+  const totalTabCost = document.getElementById('totalTabCost');
+
   const statsToggle = document.getElementById('statsToggle');
   const statsSection = document.getElementById('statsSection');
   let isFiltering = false;
@@ -307,23 +318,42 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   async function updateStatistics() {
-    console.log('📊 POPUP DEBUG: Requesting statistics...');
+    console.log('📊 POPUP DEBUG: Requesting all statistics...');
+
     try {
-      const response = await chrome.runtime.sendMessage({
-        action: 'getCurrentTabStats'
-      });
+      const [currentResponse, todayResponse, totalResponse] = await Promise.all([
+        chrome.runtime.sendMessage({ action: 'getCurrentTabStats' }),
+        chrome.runtime.sendMessage({ action: 'getTodayStats' }),
+        chrome.runtime.sendMessage({ action: 'getTotalStats' })
+      ]);
 
-      console.log('📊 POPUP DEBUG: Received response:', response);
+      console.log('📊 POPUP DEBUG: Received responses:', { currentResponse, todayResponse, totalResponse });
 
-      if (response) {
-        const stats = response.statistics;
-        const tokenUsage = response.tokenUsage || { inputTokens: 0, outputTokens: 0, totalCost: 0 };
+      if (currentResponse) {
+        const stats = currentResponse.statistics;
+        const tokenUsage = currentResponse.tokenUsage || { inputTokens: 0, outputTokens: 0, totalCost: 0 };
 
-        console.log('📊 POPUP DEBUG: Updating UI with stats:', stats, 'tokens:', tokenUsage);
+        console.log('📊 POPUP DEBUG: Updating current tab UI with stats:', stats, 'tokens:', tokenUsage);
         currentTabStats.textContent = `${stats.shownPosts} of ${stats.totalPosts}`;
         inputTokens.textContent = tokenUsage.inputTokens.toString();
         outputTokens.textContent = tokenUsage.outputTokens.toString();
         totalCost.textContent = tokenUsage.totalCost.toFixed(6);
+      }
+
+      if (todayResponse) {
+        console.log('📊 POPUP DEBUG: Updating today UI with stats:', todayResponse);
+        todayStats.textContent = `${todayResponse.shownPosts} of ${todayResponse.totalPosts}`;
+        todayInputTokens.textContent = todayResponse.inputTokens.toString();
+        todayOutputTokens.textContent = todayResponse.outputTokens.toString();
+        todayCost.textContent = todayResponse.totalCost.toFixed(6);
+      }
+
+      if (totalResponse) {
+        console.log('📊 POPUP DEBUG: Updating total UI with stats:', totalResponse);
+        totalTabStats.textContent = `${totalResponse.shownPosts} of ${totalResponse.totalPosts}`;
+        totalInputTokens.textContent = totalResponse.inputTokens.toString();
+        totalOutputTokens.textContent = totalResponse.outputTokens.toString();
+        totalTabCost.textContent = totalResponse.totalCost.toFixed(6);
       }
     } catch (error) {
       console.log('Could not get statistics:', error);
@@ -331,6 +361,16 @@ document.addEventListener('DOMContentLoaded', function() {
       inputTokens.textContent = '0';
       outputTokens.textContent = '0';
       totalCost.textContent = '0.000000';
+
+      todayStats.textContent = '0 of 0';
+      todayInputTokens.textContent = '0';
+      todayOutputTokens.textContent = '0';
+      todayCost.textContent = '0.000000';
+
+      totalTabStats.textContent = '0 of 0';
+      totalInputTokens.textContent = '0';
+      totalOutputTokens.textContent = '0';
+      totalTabCost.textContent = '0.000000';
     }
   }
 

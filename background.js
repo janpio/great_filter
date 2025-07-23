@@ -33,8 +33,12 @@ const tabFilteringStates = new Map();
 const tabStatistics = new Map();
 const tabTokenUsage = new Map();
 let globalApiRequestCount = 0;
+let dailyStats = {};
+let totalStats = {};
+let lastResetDate = '';
 
 initializeGlobalApiCounter();
+initializeStatisticsStorage();
 
 async function initializeGlobalApiCounter() {
   try {
@@ -44,6 +48,47 @@ async function initializeGlobalApiCounter() {
   } catch (error) {
     console.error('Error initializing global API counter:', error);
     globalApiRequestCount = 0;
+  }
+}
+
+async function initializeStatisticsStorage() {
+  try {
+    const today = new Date().toDateString();
+    const result = await chrome.storage.local.get(['dailyStats', 'totalStats', 'lastResetDate']);
+
+    dailyStats = result.dailyStats || {};
+    totalStats = result.totalStats || {
+      totalPosts: 0,
+      shownPosts: 0,
+      filteredPosts: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalCost: 0
+    };
+    lastResetDate = result.lastResetDate || today;
+
+    if (lastResetDate !== today) {
+      lastResetDate = today;
+      await chrome.storage.local.set({ lastResetDate });
+    }
+
+    if (!dailyStats[today]) {
+      dailyStats[today] = {
+        totalPosts: 0,
+        shownPosts: 0,
+        filteredPosts: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalCost: 0
+      };
+      await chrome.storage.local.set({ dailyStats });
+    }
+
+    console.log('📊 BACKGROUND DEBUG: Initialized statistics storage for', today);
+    console.log('📊 DAILY STATS:', dailyStats[today]);
+    console.log('📊 TOTAL STATS:', totalStats);
+  } catch (error) {
+    console.error('Error initializing statistics storage:', error);
   }
 }
 
@@ -73,9 +118,62 @@ async function updateTabTokenUsage(inputTokens, outputTokens, totalCost) {
 
       tabTokenUsage.set(tabId, currentUsage);
       console.log('💰 BACKGROUND DEBUG: Updated token usage for tab', tabId, ':', currentUsage);
+
+      await updateDailyAndTotalStats({ inputTokens, outputTokens, totalCost });
     }
   } catch (error) {
     console.error('Error updating tab token usage:', error);
+  }
+}
+
+async function updateDailyAndTotalStats(updates) {
+  try {
+    const today = new Date().toDateString();
+
+    if (lastResetDate !== today) {
+      lastResetDate = today;
+      if (!dailyStats[today]) {
+        dailyStats[today] = {
+          totalPosts: 0,
+          shownPosts: 0,
+          filteredPosts: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          totalCost: 0
+        };
+      }
+      await chrome.storage.local.set({ lastResetDate, dailyStats });
+    }
+
+    if (updates.inputTokens !== undefined) {
+      dailyStats[today].inputTokens += updates.inputTokens;
+      totalStats.inputTokens += updates.inputTokens;
+    }
+    if (updates.outputTokens !== undefined) {
+      dailyStats[today].outputTokens += updates.outputTokens;
+      totalStats.outputTokens += updates.outputTokens;
+    }
+    if (updates.totalCost !== undefined) {
+      dailyStats[today].totalCost += updates.totalCost;
+      totalStats.totalCost += updates.totalCost;
+    }
+    if (updates.totalPosts !== undefined) {
+      dailyStats[today].totalPosts += updates.totalPosts;
+      totalStats.totalPosts += updates.totalPosts;
+    }
+    if (updates.shownPosts !== undefined) {
+      dailyStats[today].shownPosts += updates.shownPosts;
+      totalStats.shownPosts += updates.shownPosts;
+    }
+    if (updates.filteredPosts !== undefined) {
+      dailyStats[today].filteredPosts += updates.filteredPosts;
+      totalStats.filteredPosts += updates.filteredPosts;
+    }
+
+    await chrome.storage.local.set({ dailyStats, totalStats });
+    console.log('📊 BACKGROUND DEBUG: Updated daily/total stats:', { daily: dailyStats[today], total: totalStats });
+  } catch (error) {
+    console.error('Error updating daily/total statistics:', error);
   }
 }
 
@@ -172,7 +270,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const tabId = await getCurrentTabId();
         console.log('📊 BACKGROUND DEBUG: Storing stats for tab ID:', tabId);
         if (tabId && request.statistics) {
+          const previousStats = tabStatistics.get(tabId) || { totalPosts: 0, shownPosts: 0, filteredPosts: 0 };
           tabStatistics.set(tabId, request.statistics);
+
+          const statsDiff = {
+            totalPosts: request.statistics.totalPosts - previousStats.totalPosts,
+            shownPosts: request.statistics.shownPosts - previousStats.shownPosts,
+            filteredPosts: request.statistics.filteredPosts - previousStats.filteredPosts
+          };
+
+          if (statsDiff.totalPosts > 0 || statsDiff.shownPosts > 0 || statsDiff.filteredPosts > 0) {
+            await updateDailyAndTotalStats(statsDiff);
+          }
+
           console.log('📊 BACKGROUND DEBUG: Updated tab statistics for tab', tabId, ':', request.statistics);
           chrome.runtime.sendMessage({
             action: 'tabStatsUpdated',
@@ -228,6 +338,53 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     })();
     return true;
   }
+
+  if (request.action === 'getTodayStats') {
+    console.log('📊 BACKGROUND DEBUG: Received getTodayStats message');
+    try {
+      const today = new Date().toDateString();
+      const todayStats = dailyStats[today] || {
+        totalPosts: 0,
+        shownPosts: 0,
+        filteredPosts: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalCost: 0
+      };
+      console.log('📊 BACKGROUND DEBUG: Sending today stats:', todayStats);
+      sendResponse(todayStats);
+    } catch (error) {
+      console.log('📊 BACKGROUND DEBUG: Error getting today stats:', error);
+      sendResponse({
+        totalPosts: 0,
+        shownPosts: 0,
+        filteredPosts: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalCost: 0
+      });
+    }
+    return true;
+  }
+
+  if (request.action === 'getTotalStats') {
+    console.log('📊 BACKGROUND DEBUG: Received getTotalStats message');
+    try {
+      console.log('📊 BACKGROUND DEBUG: Sending total stats:', totalStats);
+      sendResponse(totalStats);
+    } catch (error) {
+      console.log('📊 BACKGROUND DEBUG: Error getting total stats:', error);
+      sendResponse({
+        totalPosts: 0,
+        shownPosts: 0,
+        filteredPosts: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalCost: 0
+      });
+    }
+    return true;
+  }
 });
 
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
@@ -249,11 +406,13 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 chrome.runtime.onStartup.addListener(() => {
   initializeIcon();
   initializeGlobalApiCounter();
+  initializeStatisticsStorage();
 });
 
 chrome.runtime.onInstalled.addListener(() => {
   initializeIcon();
   initializeGlobalApiCounter();
+  initializeStatisticsStorage();
 });
 
 async function initializeIcon() {
