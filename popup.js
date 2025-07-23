@@ -17,12 +17,17 @@ document.addEventListener('DOMContentLoaded', function() {
   const statusDetails = document.getElementById('statusDetails');
   const currentTopics = document.getElementById('currentTopics');
   const currentTabStats = document.getElementById('currentTabStats');
-  const globalApiStats = document.getElementById('globalApiStats');
+  const inputTokens = document.getElementById('inputTokens');
+  const outputTokens = document.getElementById('outputTokens');
+  const totalCost = document.getElementById('totalCost');
+  const statsToggle = document.getElementById('statsToggle');
+  const statsSection = document.getElementById('statsSection');
   let isFiltering = false;
 
   loadSavedTopics();
   checkCurrentFilteringState();
   updateStatistics();
+  initializeStatsToggle();
 
   let originalTopics = '';
 
@@ -250,6 +255,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  async function initializeStatsToggle() {
+    try {
+      const result = await chrome.storage.local.get(['statsExpanded']);
+      const isExpanded = result.statsExpanded === true;
+
+      if (isExpanded) {
+        showStats();
+      } else {
+        hideStats();
+      }
+    } catch (error) {
+      console.error('Error loading stats toggle state:', error);
+      hideStats();
+    }
+
+    statsToggle.addEventListener('click', toggleStats);
+  }
+
+  async function toggleStats() {
+    const isCurrentlyVisible = statsSection.style.display !== 'none';
+
+    if (isCurrentlyVisible) {
+      hideStats();
+      await chrome.storage.local.set({ statsExpanded: false });
+    } else {
+      showStats();
+      await chrome.storage.local.set({ statsExpanded: true });
+    }
+  }
+
+  function showStats() {
+    statsSection.style.display = 'block';
+    statsToggle.textContent = 'Hide Statistics';
+  }
+
+  function hideStats() {
+    statsSection.style.display = 'none';
+    statsToggle.textContent = 'Show Statistics';
+  }
+
   async function updateStatistics() {
     console.log('📊 POPUP DEBUG: Requesting statistics...');
     try {
@@ -261,16 +306,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (response) {
         const stats = response.statistics;
-        const globalCount = response.globalApiRequestCount;
+        const tokenUsage = response.tokenUsage || { inputTokens: 0, outputTokens: 0, totalCost: 0 };
 
-        console.log('📊 POPUP DEBUG: Updating UI with stats:', stats, 'global:', globalCount);
-        currentTabStats.textContent = `Showing ${stats.shownPosts} of ${stats.totalPosts} posts`;
-        globalApiStats.textContent = globalCount.toString();
+        console.log('📊 POPUP DEBUG: Updating UI with stats:', stats, 'tokens:', tokenUsage);
+        currentTabStats.textContent = `${stats.shownPosts} of ${stats.totalPosts}`;
+        inputTokens.textContent = tokenUsage.inputTokens.toString();
+        outputTokens.textContent = tokenUsage.outputTokens.toString();
+        totalCost.textContent = tokenUsage.totalCost.toFixed(6);
       }
     } catch (error) {
       console.log('Could not get statistics:', error);
-      currentTabStats.textContent = 'Showing 0 of 0 posts';
-      globalApiStats.textContent = '0';
+      currentTabStats.textContent = '0 of 0';
+      inputTokens.textContent = '0';
+      outputTokens.textContent = '0';
+      totalCost.textContent = '0.000000';
     }
   }
 

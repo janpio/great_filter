@@ -31,6 +31,7 @@ let processingQueue = false;
 
 const tabFilteringStates = new Map();
 const tabStatistics = new Map();
+const tabTokenUsage = new Map();
 let globalApiRequestCount = 0;
 
 initializeGlobalApiCounter();
@@ -53,6 +54,28 @@ async function incrementGlobalApiCounter(postCount = 1) {
     console.log('🔧 BACKGROUND DEBUG: Global API counter incremented by', postCount, 'to:', globalApiRequestCount);
   } catch (error) {
     console.error('Error saving global API counter:', error);
+  }
+}
+
+async function updateTabTokenUsage(inputTokens, outputTokens, totalCost) {
+  try {
+    const tabId = await getCurrentTabId();
+    if (tabId) {
+      const currentUsage = tabTokenUsage.get(tabId) || {
+        inputTokens: 0,
+        outputTokens: 0,
+        totalCost: 0
+      };
+
+      currentUsage.inputTokens += inputTokens;
+      currentUsage.outputTokens += outputTokens;
+      currentUsage.totalCost += totalCost;
+
+      tabTokenUsage.set(tabId, currentUsage);
+      console.log('💰 BACKGROUND DEBUG: Updated token usage for tab', tabId, ':', currentUsage);
+    }
+  } catch (error) {
+    console.error('Error updating tab token usage:', error);
   }
 }
 
@@ -183,15 +206,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           shownPosts: 0,
           filteredPosts: 0
         };
-        console.log('📊 BACKGROUND DEBUG: Sending stats:', stats, 'global:', globalApiRequestCount);
+        const tokenUsage = tabTokenUsage.get(tabId) || {
+          inputTokens: 0,
+          outputTokens: 0,
+          totalCost: 0
+        };
+        console.log('📊 BACKGROUND DEBUG: Sending stats:', stats, 'tokens:', tokenUsage, 'global:', globalApiRequestCount);
         sendResponse({
           statistics: stats,
+          tokenUsage: tokenUsage,
           globalApiRequestCount: globalApiRequestCount
         });
       } catch (error) {
         console.log('📊 BACKGROUND DEBUG: Error getting tab stats:', error);
         sendResponse({
           statistics: { totalPosts: 0, shownPosts: 0, filteredPosts: 0 },
+          tokenUsage: { inputTokens: 0, outputTokens: 0, totalCost: 0 },
           globalApiRequestCount: globalApiRequestCount
         });
       }
@@ -328,6 +358,24 @@ Answer with only "Yes" or "No".`;
     const data = await response.json();
     console.log('🔧 BACKGROUND DEBUG: API response data:', JSON.stringify(data, null, 2));
 
+    if (data.usage) {
+      const inputTokens = data.usage.prompt_tokens || 0;
+      const outputTokens = data.usage.completion_tokens || 0;
+      const totalTokens = data.usage.total_tokens || 0;
+
+      const inputCost = (inputTokens / 1000000) * 0.10;
+      const outputCost = (outputTokens / 1000000) * 0.40;
+      const totalCost = inputCost + outputCost;
+
+      console.log('💰 TOKEN USAGE - Input:', inputTokens, 'tokens, Output:', outputTokens, 'tokens, Total:', totalTokens, 'tokens');
+      console.log('💰 COST BREAKDOWN - Input: $' + inputCost.toFixed(6) + ', Output: $' + outputCost.toFixed(6) + ', Total: $' + totalCost.toFixed(6));
+
+      await updateTabTokenUsage(inputTokens, outputTokens, totalCost);
+    } else {
+      console.log('⚠️ TOKEN WARNING: No usage data found in API response');
+      console.log('⚠️ RESPONSE KEYS:', Object.keys(data));
+    }
+
     if (data.choices && data.choices[0]) {
       const answer = data.choices[0].message.content.trim().toLowerCase();
       const isAllowed = answer.includes('yes');
@@ -417,6 +465,25 @@ Item titles:
 
     const data = await response.json();
     console.log('🔧 BACKGROUND DEBUG: Batch API response data:', JSON.stringify(data, null, 2));
+
+    if (data.usage) {
+      const inputTokens = data.usage.prompt_tokens || 0;
+      const outputTokens = data.usage.completion_tokens || 0;
+      const totalTokens = data.usage.total_tokens || 0;
+
+      const inputCost = (inputTokens / 1000000) * 0.10;
+      const outputCost = (outputTokens / 1000000) * 0.40;
+      const totalCost = inputCost + outputCost;
+
+      console.log('💰 BATCH TOKEN USAGE - Input:', inputTokens, 'tokens, Output:', outputTokens, 'tokens, Total:', totalTokens, 'tokens');
+      console.log('💰 BATCH COST BREAKDOWN - Input: $' + inputCost.toFixed(6) + ', Output: $' + outputCost.toFixed(6) + ', Total: $' + totalCost.toFixed(6));
+      console.log('💰 BATCH COST PER ITEM - $' + (totalCost / items.length).toFixed(6) + ' per item');
+
+      await updateTabTokenUsage(inputTokens, outputTokens, totalCost);
+    } else {
+      console.log('⚠️ BATCH TOKEN WARNING: No usage data found in API response');
+      console.log('⚠️ BATCH RESPONSE KEYS:', Object.keys(data));
+    }
 
     if (data.choices && data.choices[0]) {
       const fullResponse = data.choices[0].message.content.trim();
