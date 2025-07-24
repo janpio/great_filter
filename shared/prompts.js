@@ -1,19 +1,8 @@
-console.log('🔧 Great Filter: Shared prompts loaded');
-
 class PromptTemplates {
-  static createSingleItemPrompt(content, topics) {
-    const topicsString = topics.join(', ');
-    return `Does this content relate to any of these topics: ${topicsString}?
-
-Content: "${content}"
-
-Answer with only "Yes" or "No".`;
-  }
-
   static createBatchPrompt(items, topics) {
     const topicsString = topics.join(', ');
 
-    let prompt = `Does each of these pieces of content relate to any of these topics: ${topicsString}?
+    let prompt = `User preferences: ${topicsString}. For each content excerpts, indicate whether it satisfies the user preferences.
 
 Please answer with only numbered responses in the format:
 1. YES
@@ -32,4 +21,8 @@ Content:
   }
 }
 
-window.PromptTemplates = PromptTemplates;
+if (typeof window !== 'undefined') {
+  window.PromptTemplates = PromptTemplates;
+} else {
+  globalThis.PromptTemplates = PromptTemplates;
+}

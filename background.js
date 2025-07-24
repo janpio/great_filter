@@ -1,6 +1,7 @@
 console.log('🔧 Great Filter: Background worker loaded');
 
 importScripts('config.js');
+importScripts('shared/prompts.js');
 
 const POLLING_INTERVALS = {
   STARTUP_ELEMENT_CHECK: 50,           // How often to check for elements during page load (ms)
@@ -26,8 +27,6 @@ const UI_TIMEOUTS = {
 
 let lastApiCall = 0;
 const MIN_API_INTERVAL = 100;
-let apiCallQueue = [];
-let processingQueue = false;
 
 const tabFilteringStates = new Map();
 const tabStatistics = new Map();
@@ -187,25 +186,9 @@ async function getCurrentTabId() {
   }
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   console.log('📨 BACKGROUND DEBUG: Message received:', request);
 
-  if (request.action === 'checkItemTitle') {
-    console.log('🔧 BACKGROUND DEBUG: Handling checkItemTitle request');
-
-    incrementGlobalApiCounter(1);
-    apiCallQueue.push({
-      title: request.title,
-      topics: request.topics,
-      sendResponse: sendResponse
-    });
-
-    if (!processingQueue) {
-      processApiQueue();
-    }
-
-    return true;
-  }
 
   if (request.action === 'checkItemTitlesBatch') {
     console.log('🔧 BACKGROUND DEBUG: Handling checkItemTitlesBatch request');
@@ -397,7 +380,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   }
 });
 
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     await checkAndUpdateIcon(tab);
   }
@@ -429,133 +412,7 @@ async function initializeIcon() {
   }
 }
 
-async function processApiQueue() {
-  processingQueue = true;
-  console.log('🔧 BACKGROUND DEBUG: Processing API queue, items:', apiCallQueue.length);
 
-  while (apiCallQueue.length > 0) {
-    const { title, topics, sendResponse } = apiCallQueue.shift();
-
-    const now = Date.now();
-    const timeSinceLastCall = now - lastApiCall;
-
-    if (timeSinceLastCall < MIN_API_INTERVAL) {
-      const delay = MIN_API_INTERVAL - timeSinceLastCall;
-      console.log(`🔧 BACKGROUND DEBUG: Rate limiting - waiting ${delay}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-
-    try {
-      lastApiCall = Date.now();
-      const result = await handleItemTitleCheck(title, topics);
-      console.log('🔧 BACKGROUND DEBUG: Sending response:', result);
-      sendResponse(result);
-    } catch (error) {
-      console.error('🔧 BACKGROUND DEBUG: Error occurred:', error);
-      sendResponse({ error: error.message });
-    }
-  }
-
-  processingQueue = false;
-  console.log('🔧 BACKGROUND DEBUG: Finished processing API queue');
-}
-
-async function handleItemTitleCheck(title, topics) {
-  console.log('🔧 BACKGROUND DEBUG: Starting handleItemTitleCheck');
-  console.log('🔧 BACKGROUND DEBUG: Title:', title);
-  console.log('🔧 BACKGROUND DEBUG: Topics:', topics);
-
-  try {
-    console.log('🔧 BACKGROUND DEBUG: Checking API key...');
-    if (!CONFIG.OPENROUTER_API_KEY || CONFIG.OPENROUTER_API_KEY === '__OPENROUTER_API_KEY__') {
-      throw new Error('OpenRouter API key not configured');
-    }
-    console.log('🔧 BACKGROUND DEBUG: API key check passed');
-
-    if (!topics || topics.length === 0) {
-      throw new Error('No topics configured');
-    }
-
-    const topicsString = topics.join(', ');
-    const prompt = `Does this item title relate to any of these topics: ${topicsString}?
-
-Item title: "${title}"
-
-Answer with only "Yes" or "No".`;
-
-    console.log('🔧 BACKGROUND DEBUG: Prompt created:', prompt);
-    console.log('🔧 BACKGROUND DEBUG: Making API request...');
-
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite-preview-06-17',
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 10,
-        temperature: 0
-      })
-    });
-
-    console.log('🔧 BACKGROUND DEBUG: API response status:', response.status);
-    console.log('🔧 BACKGROUND DEBUG: API response OK:', response.ok);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔧 BACKGROUND DEBUG: API error response:', errorText);
-      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log('🔧 BACKGROUND DEBUG: API response data:', JSON.stringify(data, null, 2));
-
-    if (data.usage) {
-      const inputTokens = data.usage.prompt_tokens || 0;
-      const outputTokens = data.usage.completion_tokens || 0;
-      const totalTokens = data.usage.total_tokens || 0;
-
-      const inputCost = (inputTokens / 1000000) * 0.10;
-      const outputCost = (outputTokens / 1000000) * 0.40;
-      const totalCost = inputCost + outputCost;
-
-      console.log('💰 TOKEN USAGE - Input:', inputTokens, 'tokens, Output:', outputTokens, 'tokens, Total:', totalTokens, 'tokens');
-      console.log('💰 COST BREAKDOWN - Input: $' + inputCost.toFixed(6) + ', Output: $' + outputCost.toFixed(6) + ', Total: $' + totalCost.toFixed(6));
-
-      await updateTabTokenUsage(inputTokens, outputTokens, totalCost);
-    } else {
-      console.log('⚠️ TOKEN WARNING: No usage data found in API response');
-      console.log('⚠️ RESPONSE KEYS:', Object.keys(data));
-    }
-
-    if (data.choices && data.choices[0]) {
-      const answer = data.choices[0].message.content.trim().toLowerCase();
-      const isAllowed = answer.includes('yes');
-
-      console.log('🔧 BACKGROUND DEBUG: API answer:', answer);
-      console.log('🔧 BACKGROUND DEBUG: Item allowed:', isAllowed);
-
-      return {
-        title: title,
-        isAllowed: isAllowed,
-        apiResponse: answer
-      };
-    } else {
-      console.error('🔧 BACKGROUND DEBUG: Invalid API response structure:', data);
-      throw new Error('Invalid API response: ' + (data.error?.message || 'Unknown error'));
-    }
-  } catch (error) {
-    console.error('🔧 BACKGROUND DEBUG: Error in handleItemTitleCheck:', error);
-    throw error;
-  }
-}
 
 async function handleBatchItemTitleCheck(items, topics, sendResponse) {
   console.log('🔧 BACKGROUND DEBUG: Starting handleBatchItemTitleCheck');
@@ -573,22 +430,7 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
       throw new Error('No topics configured');
     }
 
-    const topicsString = topics.join(', ');
-
-    let prompt = `Does each of these item titles relate to any of these topics: ${topicsString}?
-
-Please answer with only numbered responses in the format:
-1. YES
-2. NO
-3. YES
-etc.
-
-Item titles:
-`;
-
-    items.forEach((item, index) => {
-      prompt += `${index + 1}. "${item.title}"\n`;
-    });
+    const prompt = PromptTemplates.createBatchPrompt(items, topics);
 
     console.log('🔧 BACKGROUND DEBUG: Full batch prompt created:');
     console.log('📋 FULL PROMPT:', prompt);
