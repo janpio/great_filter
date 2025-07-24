@@ -34,11 +34,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const statsToggle = document.getElementById('statsToggle');
   const statsSection = document.getElementById('statsSection');
   let isFiltering = false;
+  let isOnSupportedSite = false;
 
   loadSavedTopics();
   checkCurrentFilteringState();
   updateStatistics();
   initializeStatsToggle();
+  checkSupportedSite();
 
   let originalTopics = '';
 
@@ -64,6 +66,10 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   filterButton.addEventListener('click', async function() {
+    if (!isOnSupportedSite) {
+      return;
+    }
+
     if (isFiltering) {
       stopFiltering();
       return;
@@ -221,8 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function startFiltering(topics) {
     isFiltering = true;
     filterButton.textContent = 'Stop Filtering';
-    filterButton.classList.remove('btn-primary');
-    filterButton.classList.add('btn-stop');
+    updateFilterButtonState();
     setStatus('running', 'Filtering active', '', topics);
     setTimeout(updateStatistics, UI_TIMEOUTS.STATISTICS_UPDATE_DELAY);
   }
@@ -230,8 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function stopFiltering() {
     isFiltering = false;
     filterButton.textContent = 'Start Filtering';
-    filterButton.classList.remove('btn-stop');
-    filterButton.classList.add('btn-primary');
+    updateFilterButtonState();
 
     try {
       await chrome.storage.local.set({
@@ -381,6 +385,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }, UI_TIMEOUTS.POPUP_MESSAGE_DISPLAY);
   }
 
+  async function checkSupportedSite() {
+    try {
+      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+      if (tabs[0]) {
+        const url = tabs[0].url;
+        isOnSupportedSite = isSupportedWebsite(url);
+        updateFilterButtonState();
+      }
+    } catch (error) {
+      console.error('Error checking supported site:', error);
+      isOnSupportedSite = false;
+      updateFilterButtonState();
+    }
+  }
+
+  function isSupportedWebsite(url) {
+    if (!url) return false;
+
+    const supportedPatterns = [
+      /^https:\/\/www\.youtube\.com\/.*/,
+      /^https:\/\/news\.ycombinator\.com\/(?!item).*/
+    ];
+
+    return supportedPatterns.some(pattern => pattern.test(url));
+  }
+
+  function updateFilterButtonState() {
+    if (!isOnSupportedSite) {
+      filterButton.classList.remove('btn-primary', 'btn-stop');
+      filterButton.classList.add('btn-disabled');
+      filterButton.title = 'Unsupported website';
+      filterButton.disabled = true;
+    } else {
+      filterButton.classList.remove('btn-disabled');
+      filterButton.title = '';
+      filterButton.disabled = false;
+      if (isFiltering) {
+        filterButton.classList.remove('btn-primary');
+        filterButton.classList.add('btn-stop');
+      } else {
+        filterButton.classList.remove('btn-stop');
+        filterButton.classList.add('btn-primary');
+      }
+    }
+  }
+
   chrome.runtime.onMessage.addListener((request) => {
     if (request.action === 'filteringStarted') {
       console.log('Auto-filtering started with topics:', request.topics);
@@ -390,6 +440,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (request.action === 'tabStatsUpdated') {
       console.log('Statistics updated:', request.statistics);
       updateStatistics();
+    }
+  });
+
+  chrome.tabs.onActivated.addListener(() => {
+    checkSupportedSite();
+  });
+
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.url) {
+      checkSupportedSite();
     }
   });
 
