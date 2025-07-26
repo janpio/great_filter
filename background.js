@@ -40,6 +40,36 @@ let lastResetDate = '';
 initializeGlobalApiCounter();
 initializeStatisticsStorage();
 
+async function getApiConfiguration() {
+  try {
+    const result = await chrome.storage.local.get(['useOwnApiKey', 'apiKey']);
+    const useOwnApiKey = result.useOwnApiKey === true;
+    const apiKey = result.apiKey || '';
+
+    return {
+      useOwnApiKey,
+      apiKey,
+      url: useOwnApiKey ? CONFIG.OPENROUTER_API_URL : CONFIG.PROXY_URL,
+      headers: useOwnApiKey ? {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://great-filter.extension',
+        'X-Title': 'Great Filter Extension'
+      } : {
+        'Content-Type': 'application/json'
+      }
+    };
+  } catch (error) {
+    console.error('Error getting API configuration:', error);
+    return {
+      useOwnApiKey: false,
+      apiKey: '',
+      url: CONFIG.PROXY_URL,
+      headers: { 'Content-Type': 'application/json' }
+    };
+  }
+}
+
 async function initializeGlobalApiCounter() {
   try {
     const result = await chrome.storage.local.get(['globalApiRequestCount']);
@@ -466,11 +496,17 @@ async function handleItemTitleCheck(title, topics) {
   console.log('🔧 BACKGROUND DEBUG: Topics:', topics);
 
   try {
-    console.log('🔧 BACKGROUND DEBUG: Checking proxy URL...');
-    if (!CONFIG.PROXY_URL) {
-      throw new Error('Proxy URL not configured');
+    const apiConfig = await getApiConfiguration();
+    console.log('🔧 BACKGROUND DEBUG: Using own API key:', apiConfig.useOwnApiKey);
+    console.log('🔧 BACKGROUND DEBUG: API URL:', apiConfig.url);
+
+    if (!apiConfig.url) {
+      throw new Error('API URL not configured');
     }
-    console.log('🔧 BACKGROUND DEBUG: Proxy URL check passed');
+
+    if (apiConfig.useOwnApiKey && !apiConfig.apiKey) {
+      throw new Error('API key is required when using own OpenRouter key');
+    }
 
     if (!topics || topics.length === 0) {
       throw new Error('No topics configured');
@@ -486,13 +522,11 @@ Answer with only "Yes" or "No".`;
     console.log('🔧 BACKGROUND DEBUG: Prompt created:', prompt);
     console.log('🔧 BACKGROUND DEBUG: Making API request...');
 
-    const response = await fetch(CONFIG.PROXY_URL, {
+    const response = await fetch(apiConfig.url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: apiConfig.headers,
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite-preview-06-17',
+        model: CONFIG.MODEL,
         messages: [
           {
             role: 'user',
@@ -562,11 +596,17 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
   console.log('🔧 BACKGROUND DEBUG: Topics:', topics);
 
   try {
-    console.log('🔧 BACKGROUND DEBUG: Checking proxy URL...');
-    if (!CONFIG.PROXY_URL) {
-      throw new Error('Proxy URL not configured');
+    const apiConfig = await getApiConfiguration();
+    console.log('🔧 BACKGROUND DEBUG: Using own API key:', apiConfig.useOwnApiKey);
+    console.log('🔧 BACKGROUND DEBUG: API URL:', apiConfig.url);
+
+    if (!apiConfig.url) {
+      throw new Error('API URL not configured');
     }
-    console.log('🔧 BACKGROUND DEBUG: Proxy URL check passed');
+
+    if (apiConfig.useOwnApiKey && !apiConfig.apiKey) {
+      throw new Error('API key is required when using own OpenRouter key');
+    }
 
     if (!topics || topics.length === 0) {
       throw new Error('No topics configured');
@@ -593,13 +633,11 @@ Item titles:
     console.log('📋 FULL PROMPT:', prompt);
     console.log('🔧 BACKGROUND DEBUG: Making batch API request...');
 
-    const response = await fetch(CONFIG.PROXY_URL, {
+    const response = await fetch(apiConfig.url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: apiConfig.headers,
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite-preview-06-17',
+        model: CONFIG.MODEL,
         messages: [
           {
             role: 'user',
