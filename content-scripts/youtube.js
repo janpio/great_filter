@@ -18,7 +18,9 @@ class YouTubeContentFilter extends ContentFilterBase {
       'ytd-grid-video-renderer',
       'ytd-playlist-video-renderer',
       'ytd-movie-renderer',
-      'yt-lockup-view-model'
+      'yt-lockup-view-model',
+      'ytm-shorts-lockup-view-model-v2',
+      'ytm-shorts-lockup-view-model'
     ];
 
     console.log('🔍 DEBUG: Container selectors:', containerSelectors);
@@ -44,7 +46,11 @@ class YouTubeContentFilter extends ContentFilterBase {
           'span[title]',
           'a[title]',
           'yt-lockup-view-model a[aria-label]',
-          'yt-lockup-view-model img[alt]'
+          'yt-lockup-view-model img[alt]',
+          '.shortsLockupViewModelHostMetadataTitle a',
+          '.shortsLockupViewModelHostMetadataTitle span',
+          '.shortsLockupViewModelHostOutsideMetadataTitle a',
+          '.shortsLockupViewModelHostOutsideMetadataTitle span'
         ];
 
         let titleElement = null;
