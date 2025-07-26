@@ -1,5 +1,3 @@
-const OPENROUTER_API_KEY = CONFIG.OPENROUTER_API_KEY;
-
 const UI_TIMEOUTS = {
   POPUP_MESSAGE_DISPLAY: 3000,         // How long popup messages stay visible (ms)
   STATISTICS_UPDATE_DELAY: 1000,       // Delay before updating statistics in popup (ms)

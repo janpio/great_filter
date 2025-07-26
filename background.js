@@ -466,11 +466,11 @@ async function handleItemTitleCheck(title, topics) {
   console.log('🔧 BACKGROUND DEBUG: Topics:', topics);
 
   try {
-    console.log('🔧 BACKGROUND DEBUG: Checking API key...');
-    if (!CONFIG.OPENROUTER_API_KEY || CONFIG.OPENROUTER_API_KEY === '__OPENROUTER_API_KEY__') {
-      throw new Error('OpenRouter API key not configured');
+    console.log('🔧 BACKGROUND DEBUG: Checking proxy URL...');
+    if (!CONFIG.PROXY_URL) {
+      throw new Error('Proxy URL not configured');
     }
-    console.log('🔧 BACKGROUND DEBUG: API key check passed');
+    console.log('🔧 BACKGROUND DEBUG: Proxy URL check passed');
 
     if (!topics || topics.length === 0) {
       throw new Error('No topics configured');
@@ -486,10 +486,9 @@ Answer with only "Yes" or "No".`;
     console.log('🔧 BACKGROUND DEBUG: Prompt created:', prompt);
     console.log('🔧 BACKGROUND DEBUG: Making API request...');
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch(CONFIG.PROXY_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -563,11 +562,11 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
   console.log('🔧 BACKGROUND DEBUG: Topics:', topics);
 
   try {
-    console.log('🔧 BACKGROUND DEBUG: Checking API key...');
-    if (!CONFIG.OPENROUTER_API_KEY || CONFIG.OPENROUTER_API_KEY === '__OPENROUTER_API_KEY__') {
-      throw new Error('OpenRouter API key not configured');
+    console.log('🔧 BACKGROUND DEBUG: Checking proxy URL...');
+    if (!CONFIG.PROXY_URL) {
+      throw new Error('Proxy URL not configured');
     }
-    console.log('🔧 BACKGROUND DEBUG: API key check passed');
+    console.log('🔧 BACKGROUND DEBUG: Proxy URL check passed');
 
     if (!topics || topics.length === 0) {
       throw new Error('No topics configured');
@@ -594,10 +593,9 @@ Item titles:
     console.log('📋 FULL PROMPT:', prompt);
     console.log('🔧 BACKGROUND DEBUG: Making batch API request...');
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch(CONFIG.PROXY_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

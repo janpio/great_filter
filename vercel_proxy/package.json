@@ -1,0 +1,12 @@
+{
+  "name": "great-filter-proxy",
+  "version": "1.0.0",
+  "description": "Vercel proxy server for Great Filter extension",
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

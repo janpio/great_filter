@@ -8,7 +8,7 @@
     "default_title": "Great Filter"
   },
   "permissions": ["storage", "tabs", "activeTab"],
-  "host_permissions": ["https://openrouter.ai/*", "https://www.youtube.com/*","https://news.ycombinator.com/*"],
+  "host_permissions": ["https://*.vercel.app/*", "https://www.youtube.com/*","https://news.ycombinator.com/*"],
   "background": {
     "service_worker": "background.js"
   },
