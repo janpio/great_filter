@@ -4,6 +4,7 @@
   "description": "Vercel proxy server for Great Filter extension",
   "type": "module",
   "dependencies": {
+    "@upstash/redis": "^1.35.2",
     "node-fetch": "^3.3.2"
   },
   "engines": {

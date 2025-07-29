@@ -31,6 +31,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const totalOutputTokens = document.getElementById('totalOutputTokens');
   const totalTabCost = document.getElementById('totalTabCost');
 
+  const dailyUsageGroup = document.getElementById('dailyUsageGroup');
+  const dailyUsage = document.getElementById('dailyUsage');
+  const dailyRemaining = document.getElementById('dailyRemaining');
+  const dailyReset = document.getElementById('dailyReset');
+
   const statsToggle = document.getElementById('statsToggle');
   const statsSection = document.getElementById('statsSection');
   let isFiltering = false;
@@ -40,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
   checkCurrentFilteringState();
   updateStatistics();
   initializeStatsToggle();
+  checkDailyUsageDisplay();
 
   let originalTopics = '';
   let originalUseOwnApiKey = false;
@@ -60,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   useOwnApiKeyCheckbox.addEventListener('change', function() {
     checkForChanges();
+    checkDailyUsageDisplay();
   });
 
   apiKeyInput.addEventListener('input', function() {
@@ -434,6 +441,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }, UI_TIMEOUTS.POPUP_MESSAGE_DISPLAY);
   }
 
+  function updateDailyUsage(usageInfo) {
+    if (!usageInfo) return;
+    
+    console.log('📊 POPUP DEBUG: Updating daily usage info:', usageInfo);
+    
+    const usage = `${usageInfo.currentUsage} / ${usageInfo.dailyLimit}`;
+    const remaining = usageInfo.remaining.toString();
+    const resetTime = new Date(usageInfo.resetTime).toLocaleTimeString('en-US', { 
+      hour12: false, 
+      timeZone: 'UTC'
+    }) + ' UTC';
+    
+    dailyUsage.textContent = usage;
+    dailyRemaining.textContent = remaining;
+    dailyReset.textContent = resetTime;
+    
+    dailyUsageGroup.style.display = 'block';
+  }
+
+  async function checkDailyUsageDisplay() {
+    try {
+      const result = await chrome.storage.local.get(['useOwnApiKey']);
+      const useOwnApiKey = result.useOwnApiKey === true;
+      
+      if (useOwnApiKey) {
+        dailyUsageGroup.style.display = 'none';
+      } else {
+        dailyUsageGroup.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Error checking daily usage display:', error);
+    }
+  }
+
   chrome.runtime.onMessage.addListener((request) => {
     if (request.action === 'filteringStarted') {
       console.log('Auto-filtering started with topics:', request.topics);
@@ -443,6 +484,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (request.action === 'tabStatsUpdated') {
       console.log('Statistics updated:', request.statistics);
       updateStatistics();
+    }
+
+    if (request.action === 'dailyUsageUpdate') {
+      console.log('Daily usage updated:', request.usageInfo);
+      updateDailyUsage(request.usageInfo);
     }
   });
 

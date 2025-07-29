@@ -486,33 +486,61 @@ Item titles:
     console.log('📋 FULL PROMPT:', prompt);
     console.log('🔧 BACKGROUND DEBUG: Making batch API request...');
 
+    const requestBody = {
+      model: CONFIG.MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 1000,
+      temperature: 0
+    };
+
+    if (!apiConfig.useOwnApiKey) {
+      requestBody.postCount = items.length;
+    }
+
     const response = await fetch(apiConfig.url, {
       method: 'POST',
       headers: apiConfig.headers,
-      body: JSON.stringify({
-        model: CONFIG.MODEL,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0
-      })
+      body: JSON.stringify(requestBody)
     });
 
     console.log('🔧 BACKGROUND DEBUG: Batch API response status:', response.status);
     console.log('🔧 BACKGROUND DEBUG: Batch API response OK:', response.ok);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔧 BACKGROUND DEBUG: Batch API error response:', errorText);
-      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+      const errorData = await response.json().catch(() => null);
+      console.error('🔧 BACKGROUND DEBUG: Batch API error response:', errorData);
+      
+      if (response.status === 429 && errorData && errorData.error === 'Daily limit exceeded') {
+        console.log('🚫 BACKGROUND DEBUG: Daily limit exceeded from proxy server');
+        sendResponse({
+          error: 'DAILY_LIMIT_EXCEEDED',
+          message: errorData.message,
+          dailyLimit: errorData.dailyLimit,
+          currentUsage: errorData.currentUsage,
+          remaining: errorData.remaining,
+          resetTime: errorData.resetTime
+        });
+        return;
+      }
+      
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
     }
 
     const data = await response.json();
     console.log('🔧 BACKGROUND DEBUG: Batch API response data:', JSON.stringify(data, null, 2));
+
+    if (data.usageInfo && !apiConfig.useOwnApiKey) {
+      console.log('📊 BACKGROUND DEBUG: Daily usage info:', data.usageInfo);
+      chrome.runtime.sendMessage({
+        action: 'dailyUsageUpdate',
+        usageInfo: data.usageInfo
+      }).catch(() => {});
+    }
 
     if (data.usage) {
       const inputTokens = data.usage.prompt_tokens || 0;

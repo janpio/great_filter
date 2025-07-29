@@ -126,6 +126,13 @@ class ContentFilterBase {
       console.log('📡 DEBUG: Batch response received:', response);
 
       if (response.error) {
+        if (response.error === 'DAILY_LIMIT_EXCEEDED') {
+          console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
+          this.showDailyLimitMessage(response);
+          this.isFilteringActive = false;
+          chrome.runtime.sendMessage({ action: 'filteringStopped' });
+          return;
+        }
         console.error(`❌ Great Filter: Error checking ${elementType}s:`, response.error);
         return;
       }
@@ -287,6 +294,13 @@ class ContentFilterBase {
       console.log('📡 DEBUG: Polling batch response received:', response);
 
       if (response.error) {
+        if (response.error === 'DAILY_LIMIT_EXCEEDED') {
+          console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
+          this.showDailyLimitMessage(response);
+          this.isFilteringActive = false;
+          chrome.runtime.sendMessage({ action: 'filteringStopped' });
+          return;
+        }
         console.error('❌ Great Filter: Error checking polling elements:', response.error);
         chrome.runtime.sendMessage({
           action: 'filteringComplete'
@@ -379,6 +393,43 @@ class ContentFilterBase {
 
       return true;
     });
+  }
+
+  showDailyLimitMessage(errorResponse) {
+    const message = document.createElement('div');
+    message.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #dc2626;
+      color: white;
+      padding: 16px 20px;
+      border-radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 10000;
+      max-width: 400px;
+      line-height: 1.4;
+    `;
+    
+    message.innerHTML = `
+      <div style="font-weight: 600; margin-bottom: 8px;">⚠️ Daily Limit Reached</div>
+      <div style="margin-bottom: 8px;">${errorResponse.message}</div>
+      <div style="font-size: 12px; opacity: 0.9;">
+        Usage: ${errorResponse.currentUsage}/${errorResponse.dailyLimit} posts<br>
+        Resets: ${new Date(errorResponse.resetTime).toLocaleString()}
+      </div>
+    `;
+    
+    document.body.appendChild(message);
+    
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.parentNode.removeChild(message);
+      }
+    }, 10000);
   }
 }
 
