@@ -276,10 +276,6 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
 
     if (data.usageInfo && !apiConfig.useOwnApiKey) {
       console.log('📊 BACKGROUND DEBUG: Daily usage info:', data.usageInfo);
-      chrome.runtime.sendMessage({
-        action: 'dailyUsageUpdate',
-        usageInfo: data.usageInfo
-      }).catch(() => {});
     }
 
     if (data.usage) {

@@ -263,41 +263,6 @@
         .message.error {
             background: #dc2626;
         }
-        
-        .stats-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 0;
-        }
-        
-        .stats-label {
-            color: #6b7280;
-        }
-        
-        .stats-value {
-            font-weight: 500;
-            color: #1a1a1a;
-        }
-        
-        .stats-group {
-            margin-bottom: 16px;
-            padding: 12px;
-            background: #f9fafb;
-            border-radius: 4px;
-            border: 1px solid #e5e7eb;
-        }
-        
-        .stats-group:last-child {
-            margin-bottom: 0;
-        }
-        
-        .stats-group-title {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #374151;
-        }
     </style>
 </head>
 <body>
@@ -337,21 +302,6 @@
             <div id="savedMessage" class="message" style="display: none;">Preferences saved successfully!</div>
         </div>
 
-        <div class="stats-group" id="dailyUsageGroup" style="display: none;">
-            <div class="stats-group-title">Daily Usage (Proxy Server)</div>
-            <div class="stats-row">
-                <div class="stats-label">Posts Filtered</div>
-                <div class="stats-value" id="dailyUsage">0 / 3000</div>
-            </div>
-            <div class="stats-row">
-                <div class="stats-label">Remaining</div>
-                <div class="stats-value" id="dailyRemaining">3000</div>
-            </div>
-            <div class="stats-row">
-                <div class="stats-label">Resets at</div>
-                <div class="stats-value" id="dailyReset">Midnight UTC</div>
-            </div>
-        </div>
     </div>
 
     <script src="config.js"></script>
