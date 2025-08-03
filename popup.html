@@ -159,6 +159,43 @@
             font-size: 13px;
             color: #374151;
         }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            font-size: 13px;
+            color: #374151;
+            cursor: pointer;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            transition: border-color 0.2s ease;
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: #15803d;
+        }
+
+        .api-key-input::placeholder {
+            color: #9ca3af;
+        }
+
         
         textarea {
             width: 100%;
@@ -222,6 +259,10 @@
             z-index: 1000;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
+
+        .message.error {
+            background: #dc2626;
+        }
         
         .stats-section {
             font-size: 12px;
@@ -284,6 +325,14 @@
 
         <div class="section">
             <div class="section-title">Preferences</div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="useOwnApiKey" class="checkbox-input">
+                <label for="useOwnApiKey" class="checkbox-label">Use own OpenRouter API key</label>
+            </div>
+            <div class="input-group">
+                <label for="apiKey" class="input-label">OpenRouter API Key (optional)</label>
+                <input type="password" id="apiKey" class="api-key-input" placeholder="sk-or-... (leave empty to use proxy server)">
+            </div>
             <div class="input-group">
                 <label for="topics" class="input-label">Topics of Interest</label>
                 <textarea id="topics" placeholder="programming&#10;technology&#10;science&#10;education&#10;music"></textarea>
@@ -333,6 +382,22 @@
                     <div class="stats-row">
                         <div class="stats-label">Cost</div>
                         <div class="stats-value">$<span id="todayCost">0.000000</span></div>
+                    </div>
+                </div>
+
+                <div class="stats-group" id="dailyUsageGroup" style="display: none;">
+                    <div class="stats-group-title">Daily Usage (Proxy Server)</div>
+                    <div class="stats-row">
+                        <div class="stats-label">Posts Filtered</div>
+                        <div class="stats-value" id="dailyUsage">0 / 3000</div>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stats-label">Remaining</div>
+                        <div class="stats-value" id="dailyRemaining">3000</div>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stats-label">Resets at</div>
+                        <div class="stats-value" id="dailyReset">Midnight UTC</div>
                     </div>
                 </div>
                 

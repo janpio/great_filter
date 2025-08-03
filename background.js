@@ -39,6 +39,36 @@ let lastResetDate = '';
 initializeGlobalApiCounter();
 initializeStatisticsStorage();
 
+async function getApiConfiguration() {
+  try {
+    const result = await chrome.storage.local.get(['useOwnApiKey', 'apiKey']);
+    const useOwnApiKey = result.useOwnApiKey === true;
+    const apiKey = result.apiKey || '';
+
+    return {
+      useOwnApiKey,
+      apiKey,
+      url: useOwnApiKey ? CONFIG.OPENROUTER_API_URL : CONFIG.PROXY_URL,
+      headers: useOwnApiKey ? {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://great-filter.extension',
+        'X-Title': 'Great Filter Extension'
+      } : {
+        'Content-Type': 'application/json'
+      }
+    };
+  } catch (error) {
+    console.error('Error getting API configuration:', error);
+    return {
+      useOwnApiKey: false,
+      apiKey: '',
+      url: CONFIG.PROXY_URL,
+      headers: { 'Content-Type': 'application/json' }
+    };
+  }
+}
+
 async function initializeGlobalApiCounter() {
   try {
     const result = await chrome.storage.local.get(['globalApiRequestCount']);
@@ -188,7 +218,6 @@ async function getCurrentTabId() {
 
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   console.log('📨 BACKGROUND DEBUG: Message received:', request);
-
 
   if (request.action === 'checkItemTitlesBatch') {
     console.log('🔧 BACKGROUND DEBUG: Handling checkItemTitlesBatch request');
@@ -413,18 +442,23 @@ async function initializeIcon() {
 }
 
 
-
 async function handleBatchItemTitleCheck(items, topics, sendResponse) {
   console.log('🔧 BACKGROUND DEBUG: Starting handleBatchItemTitleCheck');
   console.log('🔧 BACKGROUND DEBUG: Items count:', items.length);
   console.log('🔧 BACKGROUND DEBUG: Topics:', topics);
 
   try {
-    console.log('🔧 BACKGROUND DEBUG: Checking API key...');
-    if (!CONFIG.OPENROUTER_API_KEY || CONFIG.OPENROUTER_API_KEY === '__OPENROUTER_API_KEY__') {
-      throw new Error('OpenRouter API key not configured');
+    const apiConfig = await getApiConfiguration();
+    console.log('🔧 BACKGROUND DEBUG: Using own API key:', apiConfig.useOwnApiKey);
+    console.log('🔧 BACKGROUND DEBUG: API URL:', apiConfig.url);
+
+    if (!apiConfig.url) {
+      throw new Error('API URL not configured');
     }
-    console.log('🔧 BACKGROUND DEBUG: API key check passed');
+
+    if (apiConfig.useOwnApiKey && !apiConfig.apiKey) {
+      throw new Error('API key is required when using own OpenRouter key');
+    }
 
     if (!topics || topics.length === 0) {
       throw new Error('No topics configured');
@@ -436,36 +470,61 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
     console.log('📋 FULL PROMPT:', prompt);
     console.log('🔧 BACKGROUND DEBUG: Making batch API request...');
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const requestBody = {
+      model: CONFIG.MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 1000,
+      temperature: 0
+    };
+
+    if (!apiConfig.useOwnApiKey) {
+      requestBody.postCount = items.length;
+    }
+
+    const response = await fetch(apiConfig.url, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite-preview-06-17',
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0
-      })
+      headers: apiConfig.headers,
+      body: JSON.stringify(requestBody)
     });
 
     console.log('🔧 BACKGROUND DEBUG: Batch API response status:', response.status);
     console.log('🔧 BACKGROUND DEBUG: Batch API response OK:', response.ok);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔧 BACKGROUND DEBUG: Batch API error response:', errorText);
-      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+      const errorData = await response.json().catch(() => null);
+      console.error('🔧 BACKGROUND DEBUG: Batch API error response:', errorData);
+
+      if (response.status === 429 && errorData && errorData.error === 'Daily limit exceeded') {
+        console.log('🚫 BACKGROUND DEBUG: Daily limit exceeded from proxy server');
+        sendResponse({
+          error: 'DAILY_LIMIT_EXCEEDED',
+          message: errorData.message,
+          dailyLimit: errorData.dailyLimit,
+          currentUsage: errorData.currentUsage,
+          remaining: errorData.remaining,
+          resetTime: errorData.resetTime
+        });
+        return;
+      }
+
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
     }
 
     const data = await response.json();
     console.log('🔧 BACKGROUND DEBUG: Batch API response data:', JSON.stringify(data, null, 2));
+
+    if (data.usageInfo && !apiConfig.useOwnApiKey) {
+      console.log('📊 BACKGROUND DEBUG: Daily usage info:', data.usageInfo);
+      chrome.runtime.sendMessage({
+        action: 'dailyUsageUpdate',
+        usageInfo: data.usageInfo
+      }).catch(() => {});
+    }
 
     if (data.usage) {
       const inputTokens = data.usage.prompt_tokens || 0;

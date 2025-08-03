@@ -1,5 +1,3 @@
-const OPENROUTER_API_KEY = CONFIG.OPENROUTER_API_KEY;
-
 const UI_TIMEOUTS = {
   POPUP_MESSAGE_DISPLAY: 3000,         // How long popup messages stay visible (ms)
   STATISTICS_UPDATE_DELAY: 1000,       // Delay before updating statistics in popup (ms)
@@ -11,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const savedMessage = document.getElementById('savedMessage');
   const filterButton = document.getElementById('filterButton');
   const filterMessage = document.getElementById('filterMessage');
+  const useOwnApiKeyCheckbox = document.getElementById('useOwnApiKey');
+  const apiKeyInput = document.getElementById('apiKey');
 
   const statusIndicator = document.getElementById('statusIndicator');
   const statusText = document.getElementById('statusText');
@@ -31,18 +31,27 @@ document.addEventListener('DOMContentLoaded', function() {
   const totalOutputTokens = document.getElementById('totalOutputTokens');
   const totalTabCost = document.getElementById('totalTabCost');
 
+  const dailyUsageGroup = document.getElementById('dailyUsageGroup');
+  const dailyUsage = document.getElementById('dailyUsage');
+  const dailyRemaining = document.getElementById('dailyRemaining');
+  const dailyReset = document.getElementById('dailyReset');
+
   const statsToggle = document.getElementById('statsToggle');
   const statsSection = document.getElementById('statsSection');
   let isFiltering = false;
   let isOnSupportedSite = false;
 
   loadSavedTopics();
+  loadApiKeySettings();
   checkCurrentFilteringState();
   updateStatistics();
   initializeStatsToggle();
+  checkDailyUsageDisplay();
   checkSupportedSite();
 
   let originalTopics = '';
+  let originalUseOwnApiKey = false;
+  let originalApiKey = '';
 
   function autoResizeTextarea() {
     topicsTextarea.style.height = '40px';
@@ -54,16 +63,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
   topicsTextarea.addEventListener('input', function() {
     autoResizeTextarea();
+    checkForChanges();
+  });
 
+  useOwnApiKeyCheckbox.addEventListener('change', function() {
+    checkForChanges();
+    checkDailyUsageDisplay();
+  });
+
+  apiKeyInput.addEventListener('input', function() {
+    checkForChanges();
+  });
+
+  function checkForChanges() {
     const currentTopics = topicsTextarea.value.trim();
-    if (currentTopics !== originalTopics) {
+    const currentUseOwnApiKey = useOwnApiKeyCheckbox.checked;
+    const currentApiKey = apiKeyInput.value.trim();
+
+    const hasChanges = currentTopics !== originalTopics ||
+                      currentUseOwnApiKey !== originalUseOwnApiKey ||
+                      currentApiKey !== originalApiKey;
+
+    if (hasChanges) {
       saveButton.classList.remove('inactive');
       saveButton.classList.add('active');
     } else {
       saveButton.classList.remove('active');
       saveButton.classList.add('inactive');
     }
-  });
+  }
 
   filterButton.addEventListener('click', async function() {
     if (!isOnSupportedSite) {
@@ -79,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const topics = result.allowedTopics || [];
 
     if (topics.length === 0) {
-      showMessage('Please configure preferences first');
+      showMessage('Please configure preferences first', true);
       return;
     }
 
@@ -108,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (error) {
       console.error('Error starting filter:', error);
-      showMessage('Error starting filter. Make sure you are on a supported website.');
+      showMessage('Error starting filter. Make sure you are on a supported website.', true);
     }
   });
 
@@ -119,18 +147,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const topicsText = topicsTextarea.value.trim();
     const topics = topicsText.split('\n').filter(topic => topic.trim() !== '').map(topic => topic.trim());
+    const useOwnApiKey = useOwnApiKeyCheckbox.checked;
+    const apiKey = apiKeyInput.value.trim();
 
     if (topics.length === 0) {
-      showMessage('Please enter at least one topic');
+      showMessage('Please enter at least one topic', true);
+      return;
+    }
+
+    if (useOwnApiKey && !apiKey) {
+      showMessage('Please enter your OpenRouter API key', true);
+      return;
+    }
+
+    if (useOwnApiKey && !apiKey.startsWith('sk-or-')) {
+      showMessage('OpenRouter API key should start with "sk-or-"', true);
       return;
     }
 
     try {
       await chrome.storage.local.set({
-        allowedTopics: topics
+        allowedTopics: topics,
+        useOwnApiKey: useOwnApiKey,
+        apiKey: apiKey
       });
 
       originalTopics = topicsText;
+      originalUseOwnApiKey = useOwnApiKey;
+      originalApiKey = apiKey;
       saveButton.classList.remove('active');
       saveButton.classList.add('inactive');
 
@@ -143,10 +187,10 @@ document.addEventListener('DOMContentLoaded', function() {
         await chrome.tabs.reload(tabs[0].id);
       }
 
-      console.log('Topics saved:', topics);
+      console.log('Settings saved:', { topics, useOwnApiKey, hasApiKey: !!apiKey });
     } catch (error) {
-      console.error('Error saving topics:', error);
-      showMessage('Error saving topics: ' + error.message);
+      console.error('Error saving preferences:', error);
+      showMessage('Error saving preferences: ' + error.message, true);
     }
   });
 
@@ -165,6 +209,22 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
       console.error('Error loading topics:', error);
       setStatus('inactive', 'Error loading settings');
+    }
+  }
+
+  async function loadApiKeySettings() {
+    try {
+      const result = await chrome.storage.local.get(['useOwnApiKey', 'apiKey']);
+      const useOwnApiKey = result.useOwnApiKey === true;
+      const apiKey = result.apiKey || '';
+
+      useOwnApiKeyCheckbox.checked = useOwnApiKey;
+      apiKeyInput.value = apiKey;
+
+      originalUseOwnApiKey = useOwnApiKey;
+      originalApiKey = apiKey;
+    } catch (error) {
+      console.error('Error loading API key settings:', error);
     }
   }
 
@@ -374,15 +434,49 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
 
-  function showMessage(text) {
+  function showMessage(text, isError = false) {
     const messageEl = document.createElement('div');
-    messageEl.className = 'message';
+    messageEl.className = isError ? 'message error' : 'message';
     messageEl.textContent = text;
     document.body.appendChild(messageEl);
 
     setTimeout(() => {
       messageEl.remove();
     }, UI_TIMEOUTS.POPUP_MESSAGE_DISPLAY);
+  }
+
+  function updateDailyUsage(usageInfo) {
+    if (!usageInfo) return;
+
+    console.log('📊 POPUP DEBUG: Updating daily usage info:', usageInfo);
+
+    const usage = `${usageInfo.currentUsage} / ${usageInfo.dailyLimit}`;
+    const remaining = usageInfo.remaining.toString();
+    const resetTime = new Date(usageInfo.resetTime).toLocaleTimeString('en-US', {
+      hour12: false,
+      timeZone: 'UTC'
+    }) + ' UTC';
+
+    dailyUsage.textContent = usage;
+    dailyRemaining.textContent = remaining;
+    dailyReset.textContent = resetTime;
+
+    dailyUsageGroup.style.display = 'block';
+  }
+
+  async function checkDailyUsageDisplay() {
+    try {
+      const result = await chrome.storage.local.get(['useOwnApiKey']);
+      const useOwnApiKey = result.useOwnApiKey === true;
+
+      if (useOwnApiKey) {
+        dailyUsageGroup.style.display = 'none';
+      } else {
+        dailyUsageGroup.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Error checking daily usage display:', error);
+    }
   }
 
   async function checkSupportedSite() {
@@ -440,6 +534,21 @@ document.addEventListener('DOMContentLoaded', function() {
     if (request.action === 'tabStatsUpdated') {
       console.log('Statistics updated:', request.statistics);
       updateStatistics();
+    }
+
+    if (request.action === 'dailyUsageUpdate') {
+      console.log('Daily usage updated:', request.usageInfo);
+      updateDailyUsage(request.usageInfo);
+    }
+  });
+
+  chrome.tabs.onActivated.addListener(() => {
+    checkSupportedSite();
+  });
+
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.url) {
+      checkSupportedSite();
     }
   });
 
