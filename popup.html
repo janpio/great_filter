@@ -264,10 +264,6 @@
             background: #dc2626;
         }
         
-        .stats-section {
-            font-size: 12px;
-        }
-        
         .stats-row {
             display: flex;
             justify-content: space-between;
@@ -341,85 +337,19 @@
             <div id="savedMessage" class="message" style="display: none;">Preferences saved successfully!</div>
         </div>
 
-        <button id="statsToggle" class="btn btn-secondary">Show Statistics</button>
-        
-        <div id="statsSection" style="display: none;">
-            <div class="stats-section">
-                <div class="stats-group">
-                    <div class="stats-group-title">Current Tab</div>
-                    <div class="stats-row">
-                        <div class="stats-label">Posts Shown</div>
-                        <div class="stats-value" id="currentTabStats">0 of 0</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Input Tokens</div>
-                        <div class="stats-value" id="inputTokens">0</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Output Tokens</div>
-                        <div class="stats-value" id="outputTokens">0</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Cost</div>
-                        <div class="stats-value">$<span id="totalCost">0.000000</span></div>
-                    </div>
-                </div>
-                
-                <div class="stats-group">
-                    <div class="stats-group-title">Today</div>
-                    <div class="stats-row">
-                        <div class="stats-label">Posts Shown</div>
-                        <div class="stats-value" id="todayStats">0 of 0</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Input Tokens</div>
-                        <div class="stats-value" id="todayInputTokens">0</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Output Tokens</div>
-                        <div class="stats-value" id="todayOutputTokens">0</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Cost</div>
-                        <div class="stats-value">$<span id="todayCost">0.000000</span></div>
-                    </div>
-                </div>
-
-                <div class="stats-group" id="dailyUsageGroup" style="display: none;">
-                    <div class="stats-group-title">Daily Usage (Proxy Server)</div>
-                    <div class="stats-row">
-                        <div class="stats-label">Posts Filtered</div>
-                        <div class="stats-value" id="dailyUsage">0 / 3000</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Remaining</div>
-                        <div class="stats-value" id="dailyRemaining">3000</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Resets at</div>
-                        <div class="stats-value" id="dailyReset">Midnight UTC</div>
-                    </div>
-                </div>
-                
-                <div class="stats-group">
-                    <div class="stats-group-title">Total</div>
-                    <div class="stats-row">
-                        <div class="stats-label">Posts Shown</div>
-                        <div class="stats-value" id="totalTabStats">0 of 0</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Input Tokens</div>
-                        <div class="stats-value" id="totalInputTokens">0</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Output Tokens</div>
-                        <div class="stats-value" id="totalOutputTokens">0</div>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stats-label">Cost</div>
-                        <div class="stats-value">$<span id="totalTabCost">0.000000</span></div>
-                    </div>
-                </div>
+        <div class="stats-group" id="dailyUsageGroup" style="display: none;">
+            <div class="stats-group-title">Daily Usage (Proxy Server)</div>
+            <div class="stats-row">
+                <div class="stats-label">Posts Filtered</div>
+                <div class="stats-value" id="dailyUsage">0 / 3000</div>
+            </div>
+            <div class="stats-row">
+                <div class="stats-label">Remaining</div>
+                <div class="stats-value" id="dailyRemaining">3000</div>
+            </div>
+            <div class="stats-row">
+                <div class="stats-label">Resets at</div>
+                <div class="stats-value" id="dailyReset">Midnight UTC</div>
             </div>
         </div>
     </div>

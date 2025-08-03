@@ -1,6 +1,5 @@
 const UI_TIMEOUTS = {
   POPUP_MESSAGE_DISPLAY: 3000,         // How long popup messages stay visible (ms)
-  STATISTICS_UPDATE_DELAY: 1000,       // Delay before updating statistics in popup (ms)
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -16,36 +15,17 @@ document.addEventListener('DOMContentLoaded', function() {
   const statusText = document.getElementById('statusText');
   const statusDetails = document.getElementById('statusDetails');
   const currentTopics = document.getElementById('currentTopics');
-  const currentTabStats = document.getElementById('currentTabStats');
-  const inputTokens = document.getElementById('inputTokens');
-  const outputTokens = document.getElementById('outputTokens');
-  const totalCost = document.getElementById('totalCost');
-
-  const todayStats = document.getElementById('todayStats');
-  const todayInputTokens = document.getElementById('todayInputTokens');
-  const todayOutputTokens = document.getElementById('todayOutputTokens');
-  const todayCost = document.getElementById('todayCost');
-
-  const totalTabStats = document.getElementById('totalTabStats');
-  const totalInputTokens = document.getElementById('totalInputTokens');
-  const totalOutputTokens = document.getElementById('totalOutputTokens');
-  const totalTabCost = document.getElementById('totalTabCost');
 
   const dailyUsageGroup = document.getElementById('dailyUsageGroup');
   const dailyUsage = document.getElementById('dailyUsage');
   const dailyRemaining = document.getElementById('dailyRemaining');
   const dailyReset = document.getElementById('dailyReset');
-
-  const statsToggle = document.getElementById('statsToggle');
-  const statsSection = document.getElementById('statsSection');
   let isFiltering = false;
   let isOnSupportedSite = false;
 
   loadSavedTopics();
   loadApiKeySettings();
   checkCurrentFilteringState();
-  updateStatistics();
-  initializeStatsToggle();
   checkDailyUsageDisplay();
   checkSupportedSite();
 
@@ -289,7 +269,6 @@ document.addEventListener('DOMContentLoaded', function() {
     filterButton.textContent = 'Stop Filtering';
     updateFilterButtonState();
     setStatus('running', 'Filtering active', '', topics);
-    setTimeout(updateStatistics, UI_TIMEOUTS.STATISTICS_UPDATE_DELAY);
   }
 
   async function stopFiltering() {
@@ -333,103 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
       currentTopics.style.display = 'block';
     } else {
       currentTopics.style.display = 'none';
-    }
-  }
-
-  async function initializeStatsToggle() {
-    try {
-      const result = await chrome.storage.local.get(['statsExpanded']);
-      const isExpanded = result.statsExpanded === true;
-
-      if (isExpanded) {
-        showStats();
-      } else {
-        hideStats();
-      }
-    } catch (error) {
-      console.error('Error loading stats toggle state:', error);
-      hideStats();
-    }
-
-    statsToggle.addEventListener('click', toggleStats);
-  }
-
-  async function toggleStats() {
-    const isCurrentlyVisible = statsSection.style.display !== 'none';
-
-    if (isCurrentlyVisible) {
-      hideStats();
-      await chrome.storage.local.set({ statsExpanded: false });
-    } else {
-      showStats();
-      await chrome.storage.local.set({ statsExpanded: true });
-    }
-  }
-
-  function showStats() {
-    statsSection.style.display = 'block';
-    statsToggle.textContent = 'Hide Statistics';
-  }
-
-  function hideStats() {
-    statsSection.style.display = 'none';
-    statsToggle.textContent = 'Show Statistics';
-  }
-
-  async function updateStatistics() {
-    console.log('📊 POPUP DEBUG: Requesting all statistics...');
-
-    try {
-      const [currentResponse, todayResponse, totalResponse] = await Promise.all([
-        chrome.runtime.sendMessage({ action: 'getCurrentTabStats' }),
-        chrome.runtime.sendMessage({ action: 'getTodayStats' }),
-        chrome.runtime.sendMessage({ action: 'getTotalStats' })
-      ]);
-
-      console.log('📊 POPUP DEBUG: Received responses:', { currentResponse, todayResponse, totalResponse });
-
-      if (currentResponse) {
-        const stats = currentResponse.statistics;
-        const tokenUsage = currentResponse.tokenUsage || { inputTokens: 0, outputTokens: 0, totalCost: 0 };
-
-        console.log('📊 POPUP DEBUG: Updating current tab UI with stats:', stats, 'tokens:', tokenUsage);
-        currentTabStats.textContent = `${stats.shownPosts} of ${stats.totalPosts}`;
-        inputTokens.textContent = tokenUsage.inputTokens.toString();
-        outputTokens.textContent = tokenUsage.outputTokens.toString();
-        totalCost.textContent = tokenUsage.totalCost.toFixed(6);
-      }
-
-      if (todayResponse) {
-        console.log('📊 POPUP DEBUG: Updating today UI with stats:', todayResponse);
-        todayStats.textContent = `${todayResponse.shownPosts} of ${todayResponse.totalPosts}`;
-        todayInputTokens.textContent = todayResponse.inputTokens.toString();
-        todayOutputTokens.textContent = todayResponse.outputTokens.toString();
-        todayCost.textContent = todayResponse.totalCost.toFixed(6);
-      }
-
-      if (totalResponse) {
-        console.log('📊 POPUP DEBUG: Updating total UI with stats:', totalResponse);
-        totalTabStats.textContent = `${totalResponse.shownPosts} of ${totalResponse.totalPosts}`;
-        totalInputTokens.textContent = totalResponse.inputTokens.toString();
-        totalOutputTokens.textContent = totalResponse.outputTokens.toString();
-        totalTabCost.textContent = totalResponse.totalCost.toFixed(6);
-      }
-    } catch (error) {
-      console.log('Could not get statistics:', error);
-      currentTabStats.textContent = '0 of 0';
-      inputTokens.textContent = '0';
-      outputTokens.textContent = '0';
-      totalCost.textContent = '0.000000';
-
-      todayStats.textContent = '0 of 0';
-      todayInputTokens.textContent = '0';
-      todayOutputTokens.textContent = '0';
-      todayCost.textContent = '0.000000';
-
-      totalTabStats.textContent = '0 of 0';
-      totalInputTokens.textContent = '0';
-      totalOutputTokens.textContent = '0';
-      totalTabCost.textContent = '0.000000';
     }
   }
 
@@ -531,11 +413,6 @@ document.addEventListener('DOMContentLoaded', function() {
       startFiltering(request.topics);
     }
 
-    if (request.action === 'tabStatsUpdated') {
-      console.log('Statistics updated:', request.statistics);
-      updateStatistics();
-    }
-
     if (request.action === 'dailyUsageUpdate') {
       console.log('Daily usage updated:', request.usageInfo);
       updateDailyUsage(request.usageInfo);
@@ -546,17 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkSupportedSite();
   });
 
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.url) {
-      checkSupportedSite();
-    }
-  });
-
-  chrome.tabs.onActivated.addListener(() => {
-    checkSupportedSite();
-  });
-
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
     if (changeInfo.url) {
       checkSupportedSite();
     }

@@ -19,7 +19,6 @@ const VISUAL_EFFECTS = {
 
 const UI_TIMEOUTS = {
   POPUP_MESSAGE_DISPLAY: 3000,         // How long popup messages stay visible (ms)
-  STATISTICS_UPDATE_DELAY: 1000,       // Delay before updating statistics in popup (ms)
 };
 
 class ContentFilterBase {
@@ -28,11 +27,6 @@ class ContentFilterBase {
     this.scrollTimeout = null;
     this.currentTopics = null;
     this.isFilteringActive = false;
-    this.statistics = {
-      totalPosts: 0,
-      shownPosts: 0,
-      filteredPosts: 0
-    };
     this.pollingInterval = null;
     this.lastScrollTime = 0;
     this.isScrollActive = false;
@@ -40,26 +34,6 @@ class ContentFilterBase {
     this.extractElementsFunction = null;
   }
 
-  sendStatsUpdate() {
-    console.log('📊 DEBUG: Sending stats update:', this.statistics);
-    chrome.runtime.sendMessage({
-      action: 'statsUpdate',
-      statistics: {
-        totalPosts: this.statistics.totalPosts,
-        shownPosts: this.statistics.shownPosts,
-        filteredPosts: this.statistics.filteredPosts
-      }
-    });
-  }
-
-  resetStatistics() {
-    this.statistics = {
-      totalPosts: 0,
-      shownPosts: 0,
-      filteredPosts: 0
-    };
-    this.sendStatsUpdate();
-  }
 
   blurWaitingElement(container, title) {
     console.log(`⏳ DEBUG: Applying waiting blur to element: "${title}"`);
@@ -103,9 +77,6 @@ class ContentFilterBase {
 
       console.log(`🚀 Great Filter: Processing ${elements.length} ${elementType}s in single batch`);
 
-      this.statistics.totalPosts += elements.length;
-      console.log('📊 DEBUG: Incremented totalPosts by', elements.length, 'new total:', this.statistics.totalPosts);
-
       elements.forEach(element => {
         this.processedItems.add(element.title);
         this.blurWaitingElement(element.container, element.title);
@@ -141,17 +112,13 @@ class ContentFilterBase {
       response.results.forEach((result, index) => {
         const element = elements[index];
         if (result.isAllowed) {
-          this.statistics.shownPosts++;
           this.unblurElement(element.container);
           console.log(`✅ Great Filter: ${elementType} ${index + 1} allowed: "${element.title}"`);
         } else {
-          this.statistics.filteredPosts++;
           this.blurBlockedElement(element.container, element.title);
           console.log(`🚫 Great Filter: ${elementType} ${index + 1} blocked: "${element.title}"`);
         }
       });
-
-      this.sendStatsUpdate();
 
       console.log(`🎉 DEBUG: Finished processing all ${elementType}s in batch`);
     } catch (error) {
@@ -269,8 +236,6 @@ class ContentFilterBase {
   async processNewElements(newElements) {
     console.log(`📡 DEBUG: Processing ${newElements.length} new elements`);
 
-    this.statistics.totalPosts += newElements.length;
-
     try {
       newElements.forEach(element => {
         this.processedItems.add(element.title);
@@ -312,17 +277,13 @@ class ContentFilterBase {
         const element = newElements[index];
 
         if (result.isAllowed) {
-          this.statistics.shownPosts++;
           this.unblurElement(element.container);
           console.log(`✅ Great Filter: Polling element ${index + 1} allowed: "${element.title}"`);
         } else {
-          this.statistics.filteredPosts++;
           this.blurBlockedElement(element.container, element.title);
           console.log(`🚫 Great Filter: Polling element ${index + 1} blocked: "${element.title}"`);
         }
       });
-
-      this.sendStatsUpdate();
 
       chrome.runtime.sendMessage({
         action: 'filteringComplete'
@@ -361,7 +322,6 @@ class ContentFilterBase {
 
       if (request.action === 'startFiltering') {
         console.log('🚀 DEBUG: Starting filtering with topics:', request.topics);
-        this.resetStatistics();
         this.isFilteringActive = true;
         processElementsFunction(request.topics);
         startScrollMonitoringFunction(request.topics);
@@ -381,15 +341,6 @@ class ContentFilterBase {
         });
       }
 
-      if (request.action === 'getStatistics') {
-        sendResponse({
-          statistics: {
-            totalPosts: this.statistics.totalPosts,
-            shownPosts: this.statistics.shownPosts,
-            filteredPosts: this.statistics.filteredPosts
-          }
-        });
-      }
 
       return true;
     });
@@ -413,7 +364,7 @@ class ContentFilterBase {
       max-width: 400px;
       line-height: 1.4;
     `;
-    
+
     message.innerHTML = `
       <div style="font-weight: 600; margin-bottom: 8px;">⚠️ Daily Limit Reached</div>
       <div style="margin-bottom: 8px;">${errorResponse.message}</div>
@@ -422,9 +373,9 @@ class ContentFilterBase {
         Resets: ${new Date(errorResponse.resetTime).toLocaleString()}
       </div>
     `;
-    
+
     document.body.appendChild(message);
-    
+
     setTimeout(() => {
       if (message.parentNode) {
         message.parentNode.removeChild(message);
