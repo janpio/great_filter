@@ -3,20 +3,33 @@ const UI_TIMEOUTS = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+  const mainToggle = document.getElementById('mainToggle');
+  const topicsDisplay = document.getElementById('topicsDisplay');
+  const topicsEdit = document.getElementById('topicsEdit');
+  const topicsText = document.getElementById('topicsText');
+  const topicsEditBtn = document.getElementById('topicsEditBtn');
   const topicsTextarea = document.getElementById('topics');
-  const saveButton = document.getElementById('saveButton');
-  const savedMessage = document.getElementById('savedMessage');
-  const filterButton = document.getElementById('filterButton');
-  const filterMessage = document.getElementById('filterMessage');
+  const topicsSaveBtn = document.getElementById('topicsSaveBtn');
+  
+  const moreBtn = document.getElementById('moreBtn');
+  const moreContent = document.getElementById('moreContent');
   const useOwnApiKeyCheckbox = document.getElementById('useOwnApiKey');
+  const apiKeySection = document.getElementById('apiKeySection');
+  const apiKeyDisplay = document.getElementById('apiKeyDisplay');
+  const apiKeyEdit = document.getElementById('apiKeyEdit');
+  const apiKeyText = document.getElementById('apiKeyText');
+  const apiKeyEditBtn = document.getElementById('apiKeyEditBtn');
   const apiKeyInput = document.getElementById('apiKey');
-
-  const statusIndicator = document.getElementById('statusIndicator');
-  const statusText = document.getElementById('statusText');
-  const statusDetails = document.getElementById('statusDetails');
-  const currentTopics = document.getElementById('currentTopics');
+  const apiKeySaveBtn = document.getElementById('apiKeySaveBtn');
+  
+  const savedMessage = document.getElementById('savedMessage');
+  const filterMessage = document.getElementById('filterMessage');
+  
   let isFiltering = false;
   let isOnSupportedSite = false;
+  let isMoreExpanded = false;
+  let isTopicsEditing = false;
+  let isApiKeyEditing = false;
 
   loadSavedTopics();
   loadApiKeySettings();
@@ -26,61 +39,97 @@ document.addEventListener('DOMContentLoaded', function() {
   let originalTopics = '';
   let originalUseOwnApiKey = false;
   let originalApiKey = '';
+  let currentTopicsArray = [];
 
   function autoResizeTextarea() {
-    topicsTextarea.style.height = '40px';
+    topicsTextarea.style.height = '80px';
     const scrollHeight = topicsTextarea.scrollHeight;
-    const maxHeight = 200;
+    const maxHeight = 120;
     const newHeight = Math.min(scrollHeight, maxHeight);
     topicsTextarea.style.height = newHeight + 'px';
   }
 
-  topicsTextarea.addEventListener('input', function() {
-    autoResizeTextarea();
-    checkForChanges();
-  });
-
-  useOwnApiKeyCheckbox.addEventListener('change', function() {
-    checkForChanges();
-  });
-
-  apiKeyInput.addEventListener('input', function() {
-    checkForChanges();
-  });
-
-  function checkForChanges() {
-    const currentTopics = topicsTextarea.value.trim();
-    const currentUseOwnApiKey = useOwnApiKeyCheckbox.checked;
-    const currentApiKey = apiKeyInput.value.trim();
-
-    const hasChanges = currentTopics !== originalTopics ||
-                      currentUseOwnApiKey !== originalUseOwnApiKey ||
-                      currentApiKey !== originalApiKey;
-
-    if (hasChanges) {
-      saveButton.classList.remove('inactive');
-      saveButton.classList.add('active');
-    } else {
-      saveButton.classList.remove('active');
-      saveButton.classList.add('inactive');
-    }
-  }
-
-  filterButton.addEventListener('click', async function() {
+  mainToggle.addEventListener('click', function() {
     if (!isOnSupportedSite) {
       return;
     }
-
+    
     if (isFiltering) {
       stopFiltering();
-      return;
+    } else {
+      startFilteringAction();
     }
+  });
+  
+  moreBtn.addEventListener('click', function() {
+    toggleMoreSection();
+  });
+  
+  topicsEditBtn.addEventListener('click', function() {
+    enterTopicsEditMode();
+  });
+  
+  topicsSaveBtn.addEventListener('click', function() {
+    if (topicsSaveBtn.classList.contains('active')) {
+      saveTopics();
+    }
+  });
+  
+  apiKeyEditBtn.addEventListener('click', function() {
+    enterApiKeyEditMode();
+  });
+  
+  apiKeySaveBtn.addEventListener('click', function() {
+    if (apiKeySaveBtn.classList.contains('active')) {
+      saveApiKey();
+    }
+  });
+  
+  topicsTextarea.addEventListener('input', function() {
+    autoResizeTextarea();
+    checkTopicsForChanges();
+  });
+  
+  apiKeyInput.addEventListener('input', function() {
+    checkApiKeyForChanges();
+  });
 
+  useOwnApiKeyCheckbox.addEventListener('change', function() {
+    handleApiKeyCheckboxChange();
+  });
+
+  function checkTopicsForChanges() {
+    const currentTopics = topicsTextarea.value.trim();
+    const hasChanges = currentTopics !== originalTopics;
+
+    if (hasChanges) {
+      topicsSaveBtn.classList.remove('inactive');
+      topicsSaveBtn.classList.add('active');
+    } else {
+      topicsSaveBtn.classList.remove('active');
+      topicsSaveBtn.classList.add('inactive');
+    }
+  }
+  
+  function checkApiKeyForChanges() {
+    const currentApiKey = apiKeyInput.value.trim();
+    const hasChanges = currentApiKey !== originalApiKey;
+
+    if (hasChanges) {
+      apiKeySaveBtn.classList.remove('inactive');
+      apiKeySaveBtn.classList.add('active');
+    } else {
+      apiKeySaveBtn.classList.remove('active');
+      apiKeySaveBtn.classList.add('inactive');
+    }
+  }
+
+  async function startFilteringAction() {
     const result = await chrome.storage.local.get(['allowedTopics']);
     const topics = result.allowedTopics || [];
 
     if (topics.length === 0) {
-      showMessage('Please configure preferences first', true);
+      showMessage('Please configure topics first', true);
       return;
     }
 
@@ -111,22 +160,44 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('Error starting filter:', error);
       showMessage('Error starting filter. Make sure you are on a supported website.', true);
     }
-  });
+  }
 
-  saveButton.addEventListener('click', async function() {
-    if (!saveButton.classList.contains('active')) {
-      return;
-    }
-
+  async function saveTopics() {
     const topicsText = topicsTextarea.value.trim();
     const topics = topicsText.split('\n').filter(topic => topic.trim() !== '').map(topic => topic.trim());
-    const useOwnApiKey = useOwnApiKeyCheckbox.checked;
-    const apiKey = apiKeyInput.value.trim();
 
     if (topics.length === 0) {
       showMessage('Please enter at least one topic', true);
       return;
     }
+
+    try {
+      await chrome.storage.local.set({
+        allowedTopics: topics
+      });
+
+      originalTopics = topicsText;
+      currentTopicsArray = topics;
+      exitTopicsEditMode();
+      updateTopicsDisplay();
+
+      showMessage('Topics saved successfully!');
+
+      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+      if (tabs[0]) {
+        await chrome.tabs.reload(tabs[0].id);
+      }
+
+      console.log('Topics saved:', topics);
+    } catch (error) {
+      console.error('Error saving topics:', error);
+      showMessage('Error saving topics: ' + error.message, true);
+    }
+  }
+  
+  async function saveApiKey() {
+    const apiKey = apiKeyInput.value.trim();
+    const useOwnApiKey = useOwnApiKeyCheckbox.checked;
 
     if (useOwnApiKey && !apiKey) {
       showMessage('Please enter your OpenRouter API key', true);
@@ -140,48 +211,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     try {
       await chrome.storage.local.set({
-        allowedTopics: topics,
         useOwnApiKey: useOwnApiKey,
         apiKey: apiKey
       });
 
-      originalTopics = topicsText;
       originalUseOwnApiKey = useOwnApiKey;
       originalApiKey = apiKey;
-      saveButton.classList.remove('active');
-      saveButton.classList.add('inactive');
+      exitApiKeyEditMode();
+      updateApiKeyDisplay();
 
-      showMessage('Preferences saved successfully!');
-
-      updateStatus();
+      showMessage('API key saved successfully!');
 
       const tabs = await chrome.tabs.query({active: true, currentWindow: true});
       if (tabs[0]) {
         await chrome.tabs.reload(tabs[0].id);
       }
 
-      console.log('Settings saved:', { topics, useOwnApiKey, hasApiKey: !!apiKey });
+      console.log('API key saved:', { useOwnApiKey, hasApiKey: !!apiKey });
     } catch (error) {
-      console.error('Error saving preferences:', error);
-      showMessage('Error saving preferences: ' + error.message, true);
+      console.error('Error saving API key:', error);
+      showMessage('Error saving API key: ' + error.message, true);
     }
-  });
+  }
 
   async function loadSavedTopics() {
     try {
       const result = await chrome.storage.local.get(['allowedTopics']);
       if (result.allowedTopics && result.allowedTopics.length > 0) {
+        currentTopicsArray = result.allowedTopics;
         const topicsText = result.allowedTopics.join('\n');
         topicsTextarea.value = topicsText;
         originalTopics = topicsText;
+        updateTopicsDisplay();
         autoResizeTextarea();
+      } else {
+        currentTopicsArray = [];
+        updateTopicsDisplay();
       }
-      saveButton.classList.remove('active');
-      saveButton.classList.add('inactive');
-      updateStatus();
+      updateToggleState();
     } catch (error) {
       console.error('Error loading topics:', error);
-      setStatus('inactive', 'Error loading settings');
     }
   }
 
@@ -196,6 +265,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
       originalUseOwnApiKey = useOwnApiKey;
       originalApiKey = apiKey;
+      
+      updateApiKeyDisplay();
+      updateApiKeyVisibility();
     } catch (error) {
       console.error('Error loading API key settings:', error);
     }
@@ -220,54 +292,58 @@ document.addEventListener('DOMContentLoaded', function() {
               isFiltering = true;
               startFiltering(response.topics || []);
             } else {
-              updateStatus();
+              updateToggleState();
             }
           } catch (error) {
             console.log('Could not check filtering state (probably not on supported site):', error);
-            updateStatus();
+            updateToggleState();
           }
         } else {
-          updateStatus();
+          updateToggleState();
         }
       } else {
-        updateStatus();
+        updateToggleState();
       }
     } catch (error) {
       console.error('Error checking filtering state:', error);
-      updateStatus();
+      updateToggleState();
     }
   }
 
-  async function updateStatus() {
+  async function updateToggleState() {
     try {
       const result = await chrome.storage.local.get(['allowedTopics', 'filteringEnabled']);
       const topics = result.allowedTopics || [];
       const filteringEnabled = result.filteringEnabled === true;
 
-      if (topics.length > 0 && filteringEnabled) {
-        setStatus('inactive', 'Filtering enabled', `${topics.length} topic${topics.length > 1 ? 's' : ''} configured`, topics);
-      } else if (topics.length > 0 && !filteringEnabled) {
-        setStatus('inactive', 'Filtering disabled', `${topics.length} topic${topics.length > 1 ? 's' : ''} configured`, topics);
+      if (topics.length > 0 && filteringEnabled && isOnSupportedSite) {
+        mainToggle.classList.remove('inactive');
+        mainToggle.classList.add('active');
+        isFiltering = true;
       } else {
-        setStatus('inactive', 'No topics configured', 'Enter preferences below to get started');
+        mainToggle.classList.remove('active');
+        mainToggle.classList.add('inactive');
+        isFiltering = false;
       }
+      
+      updateMainToggleState();
     } catch (error) {
       console.error('Error checking status:', error);
-      setStatus('inactive', 'Error checking status');
     }
   }
 
   function startFiltering(topics) {
     isFiltering = true;
-    filterButton.textContent = 'Stop Filtering';
-    updateFilterButtonState();
-    setStatus('running', 'Filtering active', '', topics);
+    mainToggle.classList.remove('inactive');
+    mainToggle.classList.add('active');
+    updateMainToggleState();
   }
 
   async function stopFiltering() {
     isFiltering = false;
-    filterButton.textContent = 'Start Filtering';
-    updateFilterButtonState();
+    mainToggle.classList.remove('active');
+    mainToggle.classList.add('inactive');
+    updateMainToggleState();
 
     try {
       await chrome.storage.local.set({
@@ -289,25 +365,100 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
       console.error('Error stopping filter:', error);
     }
-
-    const result = await chrome.storage.local.get(['allowedTopics']);
-    const topics = result.allowedTopics || [];
-    setStatus('inactive', 'Filtering stopped', 'Extension disabled', topics);
   }
 
-  function setStatus(state, text, details = '', topics = []) {
-    statusIndicator.className = `status-indicator ${state}`;
-    statusText.textContent = text;
-    statusDetails.textContent = details;
-
-    if (topics.length > 0) {
-      currentTopics.textContent = `Topics: ${topics.join(', ')}`;
-      currentTopics.style.display = 'block';
+  function updateMainToggleState() {
+    if (!isOnSupportedSite) {
+      mainToggle.style.opacity = '0.5';
+      mainToggle.style.cursor = 'not-allowed';
+      mainToggle.title = 'Unsupported website';
     } else {
-      currentTopics.style.display = 'none';
+      mainToggle.style.opacity = '1';
+      mainToggle.style.cursor = 'pointer';
+      mainToggle.title = isFiltering ? 'Stop filtering' : 'Start filtering';
     }
   }
 
+  function toggleMoreSection() {
+    isMoreExpanded = !isMoreExpanded;
+    if (isMoreExpanded) {
+      moreContent.classList.remove('hidden');
+      moreBtn.textContent = 'Less';
+    } else {
+      moreContent.classList.add('hidden');
+      moreBtn.textContent = 'More';
+    }
+  }
+  
+  function enterTopicsEditMode() {
+    isTopicsEditing = true;
+    topicsDisplay.classList.add('hidden');
+    topicsEdit.classList.remove('hidden');
+    topicsTextarea.focus();
+    autoResizeTextarea();
+    checkTopicsForChanges();
+  }
+  
+  function exitTopicsEditMode() {
+    isTopicsEditing = false;
+    topicsEdit.classList.add('hidden');
+    topicsDisplay.classList.remove('hidden');
+    topicsSaveBtn.classList.remove('active');
+    topicsSaveBtn.classList.add('inactive');
+  }
+  
+  function enterApiKeyEditMode() {
+    isApiKeyEditing = true;
+    apiKeyDisplay.classList.add('hidden');
+    apiKeyEdit.classList.remove('hidden');
+    apiKeyInput.focus();
+    checkApiKeyForChanges();
+  }
+  
+  function exitApiKeyEditMode() {
+    isApiKeyEditing = false;
+    apiKeyEdit.classList.add('hidden');
+    apiKeyDisplay.classList.remove('hidden');
+    apiKeySaveBtn.classList.remove('active');
+    apiKeySaveBtn.classList.add('inactive');
+  }
+  
+  function updateTopicsDisplay() {
+    if (currentTopicsArray.length > 0) {
+      topicsText.textContent = currentTopicsArray.join(', ');
+    } else {
+      topicsText.textContent = 'No topics configured';
+    }
+  }
+  
+  function updateApiKeyDisplay() {
+    if (originalUseOwnApiKey && originalApiKey) {
+      apiKeyText.textContent = 'API Key configured';
+    } else {
+      apiKeyText.textContent = 'No API key configured';
+    }
+  }
+  
+  function updateApiKeyVisibility() {
+    if (useOwnApiKeyCheckbox.checked) {
+      apiKeySection.classList.remove('hidden');
+    } else {
+      apiKeySection.classList.add('hidden');
+    }
+  }
+  
+  function handleApiKeyCheckboxChange() {
+    updateApiKeyVisibility();
+    
+    chrome.storage.local.set({
+      useOwnApiKey: useOwnApiKeyCheckbox.checked
+    }).then(() => {
+      originalUseOwnApiKey = useOwnApiKeyCheckbox.checked;
+      console.log('API key checkbox updated:', useOwnApiKeyCheckbox.checked);
+    }).catch(error => {
+      console.error('Error updating API key checkbox:', error);
+    });
+  }
 
   function showMessage(text, isError = false) {
     const messageEl = document.createElement('div');
@@ -320,19 +471,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }, UI_TIMEOUTS.POPUP_MESSAGE_DISPLAY);
   }
 
-
   async function checkSupportedSite() {
     try {
       const tabs = await chrome.tabs.query({active: true, currentWindow: true});
       if (tabs[0]) {
         const url = tabs[0].url;
         isOnSupportedSite = isSupportedWebsite(url);
-        updateFilterButtonState();
+        updateMainToggleState();
       }
     } catch (error) {
       console.error('Error checking supported site:', error);
       isOnSupportedSite = false;
-      updateFilterButtonState();
+      updateMainToggleState();
     }
   }
 
@@ -345,26 +495,6 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     return supportedPatterns.some(pattern => pattern.test(url));
-  }
-
-  function updateFilterButtonState() {
-    if (!isOnSupportedSite) {
-      filterButton.classList.remove('btn-primary', 'btn-stop');
-      filterButton.classList.add('btn-disabled');
-      filterButton.title = 'Unsupported website';
-      filterButton.disabled = true;
-    } else {
-      filterButton.classList.remove('btn-disabled');
-      filterButton.title = '';
-      filterButton.disabled = false;
-      if (isFiltering) {
-        filterButton.classList.remove('btn-primary');
-        filterButton.classList.add('btn-stop');
-      } else {
-        filterButton.classList.remove('btn-stop');
-        filterButton.classList.add('btn-primary');
-      }
-    }
   }
 
   chrome.runtime.onMessage.addListener((request) => {

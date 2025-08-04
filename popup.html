@@ -27,18 +27,13 @@
             margin-bottom: 20px;
             padding-bottom: 16px;
             border-bottom: 1px solid #e5e5e5;
+            text-align: center;
         }
         
         .logo {
             font-size: 20px;
             font-weight: 600;
             color: #15803d;
-            margin-bottom: 4px;
-        }
-        
-        .tagline {
-            font-size: 12px;
-            color: #6b7280;
         }
         
         .section {
@@ -58,95 +53,202 @@
             margin-bottom: 8px;
         }
         
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 8px;
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
         
-        .status-indicator.running {
+        .toggle-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .main-toggle {
+            width: 60px;
+            height: 60px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .main-toggle.active {
             background: #15803d;
         }
         
-        .status-indicator.waiting {
-            background: #f59e0b;
-        }
-        
-        .status-indicator.inactive {
+        .main-toggle.inactive {
             background: #9ca3af;
         }
         
-        .status-text {
-            font-weight: 500;
+        .main-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .toggle-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .topics-section {
+            position: relative;
+        }
+        
+        .topics-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .topics-text {
+            flex: 1;
             font-size: 14px;
-            color: #1a1a1a;
-        }
-        
-        .status-details {
-            font-size: 12px;
-            color: #6b7280;
-            margin-bottom: 4px;
-        }
-        
-        .current-topics {
-            font-size: 11px;
-            color: #9ca3af;
+            color: #374151;
             font-style: italic;
         }
         
-        .btn {
-            width: 100%;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 14px;
+        .edit-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
             cursor: pointer;
+            color: #6b7280;
             transition: all 0.2s ease;
-            margin-bottom: 8px;
         }
         
-        .btn-primary {
+        .edit-btn:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .topics-edit {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .topics-textarea {
+            flex: 1;
+            min-height: 80px;
+            max-height: 120px;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            line-height: 1.4;
+            resize: vertical;
+            transition: border-color 0.2s ease;
+        }
+        
+        .topics-textarea:focus {
+            outline: none;
+            border-color: #15803d;
+        }
+        
+        .save-btn {
+            padding: 8px 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 36px;
             height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .save-btn.active {
             background: #15803d;
             color: white;
         }
         
-        .btn-primary:hover {
+        .save-btn.inactive {
+            background: #f3f4f6;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .save-btn.active:hover {
             background: #166534;
         }
         
-        .btn-secondary {
-            height: 32px;
-            background: #f9fafb;
-            color: #374151;
-            border: 1px solid #d1d5db;
+        .more-section {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 16px;
         }
         
-        .btn-secondary:hover {
+        .more-btn {
+            width: 100%;
+            padding: 8px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #6b7280;
+            transition: all 0.2s ease;
+        }
+        
+        .more-btn:hover {
             background: #f3f4f6;
         }
         
-        .btn-stop {
-            height: 36px;
-            background: #dc2626;
-            color: white;
+        .more-content {
+            margin-top: 12px;
+            padding: 12px;
+            background: #fafafa;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
         }
         
-        .btn-stop:hover {
-            background: #b91c1c;
+        .api-key-section {
+            margin-top: 12px;
         }
         
-        .btn-disabled {
-            height: 36px;
-            background: #9ca3af !important;
-            color: #6b7280 !important;
-            cursor: not-allowed !important;
+        .api-key-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
         }
         
-        .btn-disabled:hover {
-            background: #9ca3af !important;
+        .api-key-text {
+            flex: 1;
+            font-size: 13px;
+            color: #374151;
+            font-style: italic;
         }
+        
+        .api-key-edit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
         
         .input-group {
             margin-bottom: 12px;
@@ -197,53 +299,7 @@
         }
 
         
-        textarea {
-            width: 100%;
-            min-height: 60px;
-            max-height: 120px;
-            padding: 8px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-family: inherit;
-            font-size: 13px;
-            line-height: 1.4;
-            resize: none;
-            transition: border-color 0.2s ease;
-        }
         
-        textarea:focus {
-            outline: none;
-            border-color: #15803d;
-        }
-        
-        textarea::placeholder {
-            color: #9ca3af;
-        }
-        
-        .save-button {
-            height: 32px;
-            border-radius: 4px;
-            font-weight: 500;
-            font-size: 13px;
-            transition: all 0.2s ease;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .save-button.inactive {
-            background: #f3f4f6;
-            color: #9ca3af;
-            cursor: not-allowed;
-        }
-        
-        .save-button.active {
-            background: #15803d;
-            color: white;
-        }
-        
-        .save-button.active:hover {
-            background: #166534;
-        }
         
         .message {
             position: fixed;
@@ -269,38 +325,49 @@
     <div class="container">
         <div class="header">
             <div class="logo">Great Filter</div>
-            <div class="tagline">AI-Powered Content Filtering</div>
         </div>
 
-        <div class="section">
-            <div class="status-header">
-                <div id="statusIndicator" class="status-indicator inactive"></div>
-                <div id="statusText" class="status-text">Loading...</div>
+        <div class="main-content">
+            <div class="toggle-section">
+                <button id="mainToggle" class="main-toggle inactive">
+                    <div class="toggle-inner"></div>
+                </button>
             </div>
-            <div id="statusDetails" class="status-details"></div>
-            <div id="currentTopics" class="current-topics"></div>
+            
+            <div class="topics-section">
+                <div class="topics-display" id="topicsDisplay">
+                    <div class="topics-text" id="topicsText">No topics configured</div>
+                    <button class="edit-btn" id="topicsEditBtn">Edit</button>
+                </div>
+                <div class="topics-edit hidden" id="topicsEdit">
+                    <textarea id="topics" class="topics-textarea" placeholder="programming&#10;technology&#10;science&#10;education&#10;music"></textarea>
+                    <button class="save-btn inactive" id="topicsSaveBtn">✓</button>
+                </div>
+            </div>
+            
+            <div class="more-section">
+                <button class="more-btn" id="moreBtn">More</button>
+                <div class="more-content hidden" id="moreContent">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="useOwnApiKey" class="checkbox-input">
+                        <label for="useOwnApiKey" class="checkbox-label">Use own OpenRouter API key</label>
+                    </div>
+                    <div class="api-key-section hidden" id="apiKeySection">
+                        <div class="api-key-display" id="apiKeyDisplay">
+                            <div class="api-key-text" id="apiKeyText">API Key configured</div>
+                            <button class="edit-btn" id="apiKeyEditBtn">Edit</button>
+                        </div>
+                        <div class="api-key-edit hidden" id="apiKeyEdit">
+                            <input type="text" id="apiKey" class="api-key-input" placeholder="sk-or-...">
+                            <button class="save-btn inactive" id="apiKeySaveBtn">✓</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <button id="filterButton" class="btn btn-primary">Start Filtering</button>
+        
         <div id="filterMessage" class="message" style="display: none;">Filtering started!</div>
-
-        <div class="section">
-            <div class="section-title">Preferences</div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="useOwnApiKey" class="checkbox-input">
-                <label for="useOwnApiKey" class="checkbox-label">Use own OpenRouter API key</label>
-            </div>
-            <div class="input-group">
-                <label for="apiKey" class="input-label">OpenRouter API Key (optional)</label>
-                <input type="password" id="apiKey" class="api-key-input" placeholder="sk-or-... (leave empty to use proxy server)">
-            </div>
-            <div class="input-group">
-                <label for="topics" class="input-label">Topics of Interest</label>
-                <textarea id="topics" placeholder="programming&#10;technology&#10;science&#10;education&#10;music"></textarea>
-            </div>
-            <button id="saveButton" class="btn save-button inactive">Save Preferences</button>
-            <div id="savedMessage" class="message" style="display: none;">Preferences saved successfully!</div>
-        </div>
+        <div id="savedMessage" class="message" style="display: none;">Preferences saved successfully!</div>
 
     </div>
 
