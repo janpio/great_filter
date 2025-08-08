@@ -366,11 +366,11 @@ class ContentFilterBase {
     `;
 
     message.innerHTML = `
+      <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Great Filter</div>
       <div style="font-weight: 600; margin-bottom: 8px;">⚠️ Daily Limit Reached</div>
-      <div style="margin-bottom: 8px;">${errorResponse.message}</div>
+      <div style="margin-bottom: 8px;">Limit reached for free requests.</div>
       <div style="font-size: 12px; opacity: 0.9;">
-        Usage: ${errorResponse.currentUsage}/${errorResponse.dailyLimit} posts<br>
-        Resets: ${new Date(errorResponse.resetTime).toLocaleString()}
+        Try again tomorrow or use your own OpenRouter API key.
       </div>
     `;
 
