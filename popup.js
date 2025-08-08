@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
   
   const moreBtn = document.getElementById('moreBtn');
   const moreContent = document.getElementById('moreContent');
-  const useOwnApiKeyCheckbox = document.getElementById('useOwnApiKey');
+  const useProxyApiRadio = document.getElementById('useProxyApi');
+  const useOwnApiKeyRadio = document.getElementById('useOwnApiKey');
   const apiKeySection = document.getElementById('apiKeySection');
   const apiKeyDisplay = document.getElementById('apiKeyDisplay');
   const apiKeyEdit = document.getElementById('apiKeyEdit');
@@ -94,8 +95,12 @@ document.addEventListener('DOMContentLoaded', function() {
     checkApiKeyForChanges();
   });
 
-  useOwnApiKeyCheckbox.addEventListener('change', function() {
-    handleApiKeyCheckboxChange();
+  useProxyApiRadio.addEventListener('change', function() {
+    handleApiChoiceChange();
+  });
+  
+  useOwnApiKeyRadio.addEventListener('change', function() {
+    handleApiChoiceChange();
   });
 
   function checkTopicsForChanges() {
@@ -150,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
           topics: topics
         });
 
-        startFiltering(topics);
+        startFiltering();
 
         await chrome.tabs.reload(tabs[0].id);
 
@@ -197,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   async function saveApiKey() {
     const apiKey = apiKeyInput.value.trim();
-    const useOwnApiKey = useOwnApiKeyCheckbox.checked;
+    const useOwnApiKey = useOwnApiKeyRadio.checked;
 
     if (useOwnApiKey && !apiKey) {
       showMessage('Please enter your OpenRouter API key', true);
@@ -260,7 +265,13 @@ document.addEventListener('DOMContentLoaded', function() {
       const useOwnApiKey = result.useOwnApiKey === true;
       const apiKey = result.apiKey || '';
 
-      useOwnApiKeyCheckbox.checked = useOwnApiKey;
+      if (useOwnApiKey) {
+        useOwnApiKeyRadio.checked = true;
+        useProxyApiRadio.checked = false;
+      } else {
+        useProxyApiRadio.checked = true;
+        useOwnApiKeyRadio.checked = false;
+      }
       apiKeyInput.value = apiKey;
 
       originalUseOwnApiKey = useOwnApiKey;
@@ -290,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response && response.isActive) {
               console.log('Filtering is already active, syncing popup state');
               isFiltering = true;
-              startFiltering(response.topics || []);
+              startFiltering();
             } else {
               updateToggleState();
             }
@@ -332,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function startFiltering(topics) {
+  function startFiltering() {
     isFiltering = true;
     mainToggle.classList.remove('inactive');
     mainToggle.classList.add('active');
@@ -440,23 +451,23 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function updateApiKeyVisibility() {
-    if (useOwnApiKeyCheckbox.checked) {
+    if (useOwnApiKeyRadio.checked) {
       apiKeySection.classList.remove('hidden');
     } else {
       apiKeySection.classList.add('hidden');
     }
   }
   
-  function handleApiKeyCheckboxChange() {
+  function handleApiChoiceChange() {
     updateApiKeyVisibility();
     
     chrome.storage.local.set({
-      useOwnApiKey: useOwnApiKeyCheckbox.checked
+      useOwnApiKey: useOwnApiKeyRadio.checked
     }).then(() => {
-      originalUseOwnApiKey = useOwnApiKeyCheckbox.checked;
-      console.log('API key checkbox updated:', useOwnApiKeyCheckbox.checked);
+      originalUseOwnApiKey = useOwnApiKeyRadio.checked;
+      console.log('API choice updated:', useOwnApiKeyRadio.checked ? 'own' : 'proxy');
     }).catch(error => {
-      console.error('Error updating API key checkbox:', error);
+      console.error('Error updating API choice:', error);
     });
   }
 
@@ -502,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
   chrome.runtime.onMessage.addListener((request) => {
     if (request.action === 'filteringStarted') {
       console.log('Auto-filtering started with topics:', request.topics);
-      startFiltering(request.topics);
+      startFiltering();
     }
   });
 
