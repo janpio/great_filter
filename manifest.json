@@ -8,7 +8,7 @@
     "default_title": "Great Filter"
   },
   "permissions": ["storage", "tabs", "activeTab"],
-  "host_permissions": ["https://*.vercel.app/*", "https://openrouter.ai/*", "https://www.youtube.com/*","https://news.ycombinator.com/*"],
+  "host_permissions": ["https://*.vercel.app/*", "https://openrouter.ai/*", "https://www.youtube.com/*","https://news.ycombinator.com/*", "https://x.com/*", "https://twitter.com/*"],
   "background": {
     "service_worker": "background.js"
   },
@@ -22,6 +22,11 @@
       "matches": ["https://news.ycombinator.com/*"],
       "exclude_matches": ["https://news.ycombinator.com/item*"],
       "js": ["shared/content-base.js", "shared/prompts.js", "content-scripts/hackernews.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["shared/content-base.js", "shared/prompts.js", "content-scripts/x.js"],
       "run_at": "document_end"
     }
   ],
