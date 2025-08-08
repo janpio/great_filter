@@ -492,7 +492,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const supportedPatterns = [
       /^https:\/\/www\.youtube\.com\/.*/,
       /^https:\/\/news\.ycombinator\.com\/(?!item).*/,
-      /^https:\/\/.*\.reddit\.com\/.*/
+      /^https:\/\/.*\.reddit\.com\/.*/,
+      /^https:\/\/x\.com\/.*/
     ];
 
     return supportedPatterns.some(pattern => pattern.test(url));
