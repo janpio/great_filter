@@ -72,54 +72,6 @@ class XContentFilter extends ContentFilterBase {
     return itemElements;
   }
 
-  blurWaitingElement(containerOrElement, title) {
-    if (typeof containerOrElement === 'object' && containerOrElement.container) {
-      const element = containerOrElement;
-      if (!element.container.style.filter) {
-        element.container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
-        element.container.style.opacity = VISUAL_EFFECTS.WAITING_OPACITY;
-        element.container.style.pointerEvents = 'none';
-      }
-    } else if (containerOrElement && containerOrElement.style) {
-      const container = containerOrElement;
-      if (!container.style.filter) {
-        container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
-        container.style.opacity = VISUAL_EFFECTS.WAITING_OPACITY;
-        container.style.pointerEvents = 'none';
-      }
-    } else {
-    }
-  }
-
-  blurBlockedElement(containerOrElement, title) {
-    if (typeof containerOrElement === 'object' && containerOrElement.container) {
-      const element = containerOrElement;
-      element.container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
-      element.container.style.opacity = VISUAL_EFFECTS.BLOCKED_OPACITY;
-      element.container.style.pointerEvents = 'none';
-    } else if (containerOrElement && containerOrElement.style) {
-      const container = containerOrElement;
-      container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
-      container.style.opacity = VISUAL_EFFECTS.BLOCKED_OPACITY;
-      container.style.pointerEvents = 'none';
-    } else {
-    }
-  }
-
-  unblurElement(containerOrElement) {
-    if (typeof containerOrElement === 'object' && containerOrElement.container) {
-      const element = containerOrElement;
-      element.container.style.filter = '';
-      element.container.style.opacity = VISUAL_EFFECTS.ALLOWED_OPACITY;
-      element.container.style.pointerEvents = '';
-    } else if (containerOrElement && containerOrElement.style) {
-      const container = containerOrElement;
-      container.style.filter = '';
-      container.style.opacity = VISUAL_EFFECTS.ALLOWED_OPACITY;
-      container.style.pointerEvents = '';
-    } else {
-    }
-  }
 
   async processElementsBatch(elements, topics, elementType = 'tweet') {
 
@@ -130,7 +82,7 @@ class XContentFilter extends ContentFilterBase {
 
       elements.forEach(element => {
         this.processedItems.add(element.title);
-        this.blurWaitingElement(element);
+        this.blurWaitingElement(element.container, element.title);
       });
 
 
@@ -153,9 +105,9 @@ class XContentFilter extends ContentFilterBase {
       response.results.forEach((result, index) => {
         const element = elements[index];
         if (result.isAllowed) {
-          this.unblurElement(element);
+          this.unblurElement(element.container);
         } else {
-          this.blurBlockedElement(element);
+          this.blurBlockedElement(element.container, element.title);
         }
       });
     } catch (error) {

@@ -92,10 +92,9 @@ class HackerNewsContentFilter extends ContentFilterBase {
   blurWaitingElement(element) {
     if (element.itemElements) {
       element.itemElements.forEach(el => {
-        if (!el.style.filter) {
-          el.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
-          el.style.opacity = VISUAL_EFFECTS.WAITING_OPACITY;
-          el.style.pointerEvents = 'none';
+        if (!el.classList.contains('gf-waiting')) {
+          el.classList.remove('gf-blocked', 'gf-allowed');
+          el.classList.add('gf-waiting');
         }
       });
     } else {
@@ -106,9 +105,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
   blurBlockedElement(element) {
     if (element.itemElements) {
       element.itemElements.forEach(el => {
-        el.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
-        el.style.opacity = VISUAL_EFFECTS.BLOCKED_OPACITY;
-        el.style.pointerEvents = 'none';
+        el.classList.remove('gf-waiting', 'gf-allowed');
+        el.classList.add('gf-blocked');
       });
     } else {
       super.blurBlockedElement(element.container, element.title);
@@ -118,9 +116,8 @@ class HackerNewsContentFilter extends ContentFilterBase {
   unblurElement(element) {
     if (element.itemElements) {
       element.itemElements.forEach(el => {
-        el.style.filter = '';
-        el.style.opacity = VISUAL_EFFECTS.ALLOWED_OPACITY;
-        el.style.pointerEvents = '';
+        el.classList.remove('gf-waiting', 'gf-blocked');
+        el.classList.add('gf-allowed');
       });
     } else {
       super.unblurElement(element.container);

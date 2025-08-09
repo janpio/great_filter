@@ -12,7 +12,7 @@ const VISUAL_EFFECTS = {
   GRAYSCALE_AMOUNT: '100%',            // Grayscale level for filtered content
   BRIGHTNESS_LEVEL: '0.2',             // Brightness reduction for filtered content
   WAITING_OPACITY: '0.8',              // Opacity while waiting for AI response
-  BLOCKED_OPACITY: '0',                // Opacity for blocked content (hidden)
+  BLOCKED_OPACITY: '0.2',              // Opacity for blocked content (visible but dimmed)
   ALLOWED_OPACITY: '',                 // Opacity for allowed content (normal)
 };
 
@@ -35,25 +35,25 @@ class ContentFilterBase {
 
 
   blurWaitingElement(container, title) {
-    if (!container.style.filter) {
-      container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
-      container.style.opacity = VISUAL_EFFECTS.WAITING_OPACITY;
-      container.style.pointerEvents = 'none';
+    if (!container.classList.contains('gf-waiting')) {
+      container.classList.remove('gf-blocked', 'gf-allowed');
+      container.classList.add('gf-waiting');
+      container.setAttribute('data-gf-state', 'waiting');
       container.title = `Processing: ${title}`;
     }
   }
 
   blurBlockedElement(container, title) {
-    container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
-    container.style.opacity = VISUAL_EFFECTS.BLOCKED_OPACITY;
-    container.style.pointerEvents = 'none';
+    container.classList.remove('gf-waiting', 'gf-allowed');
+    container.classList.add('gf-blocked');
+    container.setAttribute('data-gf-state', 'blocked');
     container.title = `Blocked: ${title}`;
   }
 
   unblurElement(container) {
-    container.style.filter = '';
-    container.style.opacity = VISUAL_EFFECTS.ALLOWED_OPACITY;
-    container.style.pointerEvents = '';
+    container.classList.remove('gf-waiting', 'gf-blocked');
+    container.classList.add('gf-allowed');
+    container.setAttribute('data-gf-state', 'allowed');
     container.title = 'Allowed: Element kept';
   }
 

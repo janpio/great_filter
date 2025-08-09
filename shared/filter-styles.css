@@ -1,0 +1,38 @@
+/* Great Filter - Content Filtering Styles */
+
+.gf-waiting,
+[data-gf-state="waiting"] {
+  filter: blur(6px) grayscale(100%) brightness(0.2) !important;
+  opacity: 0.8 !important;
+  pointer-events: none !important;
+  transition: filter 0.3s ease, opacity 0.3s ease !important;
+}
+
+.gf-blocked,
+[data-gf-state="blocked"] {
+  filter: blur(6px) grayscale(100%) brightness(0.2) !important;
+  opacity: 0.3 !important;
+  transition: filter 0.3s ease, opacity 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.gf-blocked:hover,
+[data-gf-state="blocked"]:hover {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+.gf-allowed,
+[data-gf-state="allowed"] {
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Reset any existing filter styles when applying our classes */
+.gf-waiting,
+.gf-blocked,
+.gf-allowed,
+[data-gf-state] {
+  /* Clear any inline styles that might conflict */
+}
