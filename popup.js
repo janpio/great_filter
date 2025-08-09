@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const infoIcon = document.getElementById('infoIcon');
   const infoTooltip = document.getElementById('infoTooltip');
   const infoTooltipClose = document.getElementById('infoTooltipClose');
+  const apiDescription = document.getElementById('apiDescription');
   
   let isFiltering = false;
   let isOnSupportedSite = false;
@@ -296,6 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       updateApiKeyDisplay();
       updateApiKeyVisibility();
+      updateApiDescription();
     } catch (error) {
       console.error('Error loading API key settings:', error);
     }
@@ -477,6 +479,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   function handleApiChoiceChange() {
     updateApiKeyVisibility();
+    updateApiDescription();
     
     chrome.storage.local.set({
       useOwnApiKey: useOwnApiKeyRadio.checked
@@ -486,6 +489,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }).catch(error => {
       console.error('Error updating API choice:', error);
     });
+  }
+
+  function updateApiDescription() {
+    if (useOwnApiKeyRadio.checked) {
+      apiDescription.textContent = 'Use your own OpenRouter API key for unlimited usage. You\'ll be charged directly by OpenRouter.';
+    } else {
+      apiDescription.textContent = 'No API key required. Daily usage limits apply. Perfect for trying out the extension.';
+    }
   }
 
   function showInfoTooltip() {

@@ -328,11 +328,21 @@
             padding: 8px;
             border-radius: 4px;
             transition: background-color 0.2s ease;
-            cursor: help;
+            cursor: pointer;
         }
 
         .radio-option:hover {
             background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .api-description {
+            font-size: 12px;
+            color: #94a3b8;
+            padding: 8px;
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 4px;
+            margin-top: 8px;
+            line-height: 1.4;
         }
 
         .radio-input {
@@ -550,14 +560,17 @@
                     <div class="api-choice-section">
                         <div class="section-title">API Configuration</div>
                         <div class="radio-group">
-                            <div class="radio-option" title="Free tier with daily usage limits. No API key required.">
+                            <div class="radio-option">
                                 <input type="radio" id="useProxyApi" name="apiChoice" class="radio-input" value="proxy" checked>
                                 <label for="useProxyApi" class="radio-label">Free (Limited)</label>
                             </div>
-                            <div class="radio-option" title="Use your own OpenRouter API key for unlimited usage. You'll be charged directly by OpenRouter.">
+                            <div class="radio-option">
                                 <input type="radio" id="useOwnApiKey" name="apiChoice" class="radio-input" value="own">
                                 <label for="useOwnApiKey" class="radio-label">Bring Your Own Key</label>
                             </div>
+                        </div>
+                        <div class="api-description" id="apiDescription">
+                            No API key required. Daily usage limits apply. Perfect for trying out the extension.
                         </div>
                     </div>
                     <div class="api-key-section hidden" id="apiKeySection">
