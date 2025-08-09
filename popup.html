@@ -45,6 +45,10 @@
             padding-bottom: 16px;
             border-bottom: 1px solid #334155;
             text-align: center;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .logo {
@@ -387,12 +391,139 @@
         .message.error {
             background: #dc2626;
         }
+
+        .info-icon {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #93c5fd;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .info-icon:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: #dbeafe;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .info-tooltip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .info-tooltip.show {
+            display: flex;
+        }
+
+        .info-tooltip-content {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 320px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .info-tooltip-content h3 {
+            color: #3b82f6;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .info-tooltip-content h4 {
+            color: #f1f5f9;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 16px 0 8px 0;
+        }
+
+        .info-tooltip-content p {
+            color: #cbd5e1;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .api-tier {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid #475569;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        .api-tier strong {
+            color: #93c5fd;
+        }
+
+        .supported-sites {
+            text-align: center;
+            font-style: italic;
+            color: #94a3b8;
+            margin-top: 16px;
+            margin-bottom: 0;
+        }
+
+        .info-tooltip-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #93c5fd;
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+        .info-tooltip-close:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: #dbeafe;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <div class="logo">Great Filter</div>
+            <div class="info-icon" id="infoIcon">ℹ</div>
         </div>
 
         <div class="main-content">
@@ -445,6 +576,24 @@
 
         <div id="filterMessage" class="message" style="display: none;">Filtering started!</div>
         <div id="savedMessage" class="message" style="display: none;">Preferences saved successfully!</div>
+
+        <div class="info-tooltip" id="infoTooltip">
+            <div class="info-tooltip-content">
+                <div class="info-tooltip-close" id="infoTooltipClose">×</div>
+                <h3>About</h3>
+                <p>AI-powered content filtering for social media platforms. Filter content based on your interests using intelligent topic detection.</p>
+                
+                <h4>API Tiers</h4>
+                <div class="api-tier">
+                    <strong>Free (Limited):</strong> No API key required. Daily usage limits apply. Perfect for trying out the extension.
+                </div>
+                <div class="api-tier">
+                    <strong>Bring Your Own Key:</strong> Use your OpenRouter API key for unlimited usage. You control costs and limits.
+                </div>
+                
+                <p class="supported-sites">Supports YouTube, Hacker News, Reddit, and X (Twitter)</p>
+            </div>
+        </div>
 
     </div>
 

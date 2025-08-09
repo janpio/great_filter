@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   const savedMessage = document.getElementById('savedMessage');
   const filterMessage = document.getElementById('filterMessage');
+  const infoIcon = document.getElementById('infoIcon');
+  const infoTooltip = document.getElementById('infoTooltip');
+  const infoTooltipClose = document.getElementById('infoTooltipClose');
   
   let isFiltering = false;
   let isOnSupportedSite = false;
@@ -101,6 +104,20 @@ document.addEventListener('DOMContentLoaded', function() {
   
   useOwnApiKeyRadio.addEventListener('change', function() {
     handleApiChoiceChange();
+  });
+
+  infoIcon.addEventListener('click', function() {
+    showInfoTooltip();
+  });
+
+  infoTooltip.addEventListener('click', function(e) {
+    if (e.target === infoTooltip) {
+      hideInfoTooltip();
+    }
+  });
+
+  infoTooltipClose.addEventListener('click', function() {
+    hideInfoTooltip();
   });
 
   function checkTopicsForChanges() {
@@ -469,6 +486,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }).catch(error => {
       console.error('Error updating API choice:', error);
     });
+  }
+
+  function showInfoTooltip() {
+    infoTooltip.classList.add('show');
+  }
+
+  function hideInfoTooltip() {
+    infoTooltip.classList.remove('show');
   }
 
   function showMessage(text, isError = false) {
