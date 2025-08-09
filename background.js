@@ -106,7 +106,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     getCurrentTabId().then(tabId => {
       if (tabId) {
         tabFilteringStates.set(tabId, 'processing');
-        setBadge('processing', tabId);
       }
     });
     chrome.runtime.sendMessage(request).catch(() => {
@@ -118,7 +117,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     getCurrentTabId().then(tabId => {
       if (tabId) {
         tabFilteringStates.set(tabId, 'inactive');
-        setBadge('inactive', tabId);
       }
     });
     return true;
@@ -128,7 +126,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     getCurrentTabId().then(tabId => {
       if (tabId) {
         tabFilteringStates.set(tabId, 'active');
-        setBadge('active', tabId);
       }
     });
     return true;
@@ -138,7 +135,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     getCurrentTabId().then(tabId => {
       if (tabId) {
         tabFilteringStates.set(tabId, 'processing');
-        setBadge('processing', tabId);
       }
     });
     return true;
@@ -152,9 +148,6 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   await checkAndUpdateIcon(tab);
 
   const savedState = tabFilteringStates.get(activeInfo.tabId);
-  if (savedState && isSupportedSite(tab.url)) {
-    setBadge(savedState, activeInfo.tabId);
-  }
 });
 
 chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo, tab) => {
@@ -178,12 +171,9 @@ async function initializeIcon() {
     const tabs = await chrome.tabs.query({active: true, currentWindow: true});
     if (tabs[0]) {
       await checkAndUpdateIcon(tabs[0]);
-    } else {
-      setBadge('inactive');
     }
   } catch (error) {
     console.error('Error initializing icon:', error);
-    setBadge('inactive');
   }
 }
 
@@ -327,53 +317,7 @@ async function checkAndUpdateIcon(tab) {
   if (!tab || !tab.url) return;
 
   const isSupported = isSupportedSite(tab.url);
-
-  if (!isSupported) {
-    setBadge('inactive');
-    return;
-  }
-
-  setBadge('inactive');
 }
 
 
-function setBadge(state, tabId = null) {
-
-  let badgeText = '';
-  let badgeColor = '#6c757d';
-
-  switch(state) {
-  case 'inactive':
-    badgeText = '●';
-    badgeColor = '#6c757d';
-    break;
-  case 'processing':
-    badgeText = '●';
-    badgeColor = '#ffc107';
-    break;
-  case 'active':
-    badgeText = '●';
-    badgeColor = '#28a745';
-    break;
-  default:
-    badgeText = '';
-    badgeColor = '#6c757d';
-  }
-
-  const badgeConfig = { text: badgeText };
-  const badgeColorConfig = { color: badgeColor };
-
-  if (tabId) {
-    badgeConfig.tabId = tabId;
-    badgeColorConfig.tabId = tabId;
-  }
-
-  Promise.all([
-    chrome.action.setBadgeText(badgeConfig),
-    chrome.action.setBadgeBackgroundColor(badgeColorConfig)
-  ]).then(() => {
-  }).catch(error => {
-    console.error(`❌ Error setting badge for tab ${tabId || 'ALL'}:`, error);
-  });
-}
 
