@@ -1,4 +1,3 @@
-console.log('🔧 Great Filter: Shared content base loaded');
 
 const POLLING_INTERVALS = {
   STARTUP_ELEMENT_CHECK: 50,           // How often to check for elements during page load (ms)
@@ -36,15 +35,11 @@ class ContentFilterBase {
 
 
   blurWaitingElement(container, title) {
-    console.log(`⏳ DEBUG: Applying waiting blur to element: "${title}"`);
     if (!container.style.filter) {
       container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
       container.style.opacity = VISUAL_EFFECTS.WAITING_OPACITY;
       container.style.pointerEvents = 'none';
       container.title = `Processing: ${title}`;
-      console.log('⏳ Great Filter: Applied heavy waiting blur to element:', title);
-    } else {
-      console.log('⚠️ DEBUG: Element already filtered:', title);
     }
   }
 
@@ -52,13 +47,10 @@ class ContentFilterBase {
     container.style.filter = `blur(${VISUAL_EFFECTS.BLUR_RADIUS}) grayscale(${VISUAL_EFFECTS.GRAYSCALE_AMOUNT}) brightness(${VISUAL_EFFECTS.BRIGHTNESS_LEVEL})`;
     container.style.opacity = VISUAL_EFFECTS.BLOCKED_OPACITY;
     container.style.pointerEvents = 'none';
-    console.log(`🚫 DEBUG: Applying blocked blur to element: "${title}"`);
     container.title = `Blocked: ${title}`;
-    console.log('🚫 Great Filter: Applied blocked blur with reddish tint to element:', title);
   }
 
   unblurElement(container) {
-    console.log('✅ DEBUG: Removing blur from element');
     container.style.filter = '';
     container.style.opacity = VISUAL_EFFECTS.ALLOWED_OPACITY;
     container.style.pointerEvents = '';
@@ -66,23 +58,17 @@ class ContentFilterBase {
   }
 
   async processElementsBatch(elements, topics, elementType = 'item') {
-    console.log(`🚀 DEBUG: Starting processElementsBatch for ${elementType}s`);
-    console.log('🚀 DEBUG: Topics provided:', topics);
 
     try {
       if (elements.length === 0) {
-        console.log(`❌ Great Filter: No new ${elementType}s found`);
         return;
       }
-
-      console.log(`🚀 Great Filter: Processing ${elements.length} ${elementType}s in single batch`);
 
       elements.forEach(element => {
         this.processedItems.add(element.title);
         this.blurWaitingElement(element.container, element.title);
       });
 
-      console.log(`📡 DEBUG: Sending batch of ${elements.length} ${elementType}s to background script`);
 
       const response = await chrome.runtime.sendMessage({
         action: 'checkItemTitlesBatch',
@@ -94,7 +80,6 @@ class ContentFilterBase {
         topics: topics
       });
 
-      console.log('📡 DEBUG: Batch response received:', response);
 
       if (response.error) {
         if (response.error === 'DAILY_LIMIT_EXCEEDED') {
@@ -108,19 +93,14 @@ class ContentFilterBase {
         return;
       }
 
-      console.log(`🎯 DEBUG: Applying batch results to ${elementType}s`);
       response.results.forEach((result, index) => {
         const element = elements[index];
         if (result.isAllowed) {
           this.unblurElement(element.container);
-          console.log(`✅ Great Filter: ${elementType} ${index + 1} allowed: "${element.title}"`);
         } else {
           this.blurBlockedElement(element.container, element.title);
-          console.log(`🚫 Great Filter: ${elementType} ${index + 1} blocked: "${element.title}"`);
         }
       });
-
-      console.log(`🎉 DEBUG: Finished processing all ${elementType}s in batch`);
     } catch (error) {
       console.error(`❌ Great Filter: Error in processElementsBatch for ${elementType}s:`, error);
     }
@@ -137,7 +117,6 @@ class ContentFilterBase {
 
     window.addEventListener('scroll', () => this.updateScrollActivity());
 
-    console.log(`📜 DEBUG: ${elementType} adaptive polling started (${POLLING_INTERVALS.SCROLL_ACTIVE}ms active / ${POLLING_INTERVALS.SCROLL_IDLE}ms idle)`);
   }
 
   stopScrollMonitoring() {
@@ -156,18 +135,15 @@ class ContentFilterBase {
 
     window.removeEventListener('scroll', this.updateScrollActivity);
 
-    console.log('📜 DEBUG: Adaptive polling stopped');
   }
 
 
   stopFiltering() {
-    console.log('🛑 DEBUG: Stopping filtering');
     this.isFilteringActive = false;
     this.stopScrollMonitoring();
   }
 
   waitForElements(extractElementsFunction, callback, maxAttempts = POLLING_INTERVALS.STARTUP_MAX_ATTEMPTS, interval = POLLING_INTERVALS.STARTUP_ELEMENT_CHECK) {
-    console.log('🔍 DEBUG: Starting element polling...');
     let attempts = 0;
 
     const poll = () => {
@@ -175,13 +151,10 @@ class ContentFilterBase {
       const elements = extractElementsFunction();
 
       if (elements && elements.length > 0) {
-        console.log(`🔍 DEBUG: Found ${elements.length} elements after ${attempts} attempts`);
         callback();
       } else if (attempts < maxAttempts) {
-        console.log(`🔍 DEBUG: No elements found, attempt ${attempts}/${maxAttempts}`);
         setTimeout(poll, interval);
       } else {
-        console.log('🔍 DEBUG: Max polling attempts reached, proceeding anyway');
         callback();
       }
     };
@@ -194,14 +167,12 @@ class ContentFilterBase {
 
     if (!this.isScrollActive) {
       this.isScrollActive = true;
-      console.log('📜 DEBUG: Scroll activity detected - switching to active polling');
       this.adjustPollingInterval();
     }
 
     clearTimeout(this.scrollActivityTimeout);
     this.scrollActivityTimeout = setTimeout(() => {
       this.isScrollActive = false;
-      console.log('📜 DEBUG: Scroll activity ended - switching to idle polling');
       this.adjustPollingInterval();
     }, POLLING_INTERVALS.SCROLL_ACTIVITY_TIMEOUT);
   }
@@ -212,7 +183,6 @@ class ContentFilterBase {
     clearInterval(this.pollingInterval);
 
     const interval = this.isScrollActive ? POLLING_INTERVALS.SCROLL_ACTIVE : POLLING_INTERVALS.SCROLL_IDLE;
-    console.log(`📜 DEBUG: Adjusting polling interval to ${interval}ms`);
 
     this.pollingInterval = setInterval(() => {
       this.pollForNewContent();
@@ -222,19 +192,16 @@ class ContentFilterBase {
   async pollForNewContent() {
     if (!this.currentTopics || !this.extractElementsFunction) return;
 
-    console.log(`📜 DEBUG: Polling for new content (${this.isScrollActive ? 'active' : 'idle'} mode)`);
 
     const allElements = this.extractElementsFunction();
     const newElements = allElements.filter(element => !this.processedItems.has(element.title));
 
     if (newElements.length > 0) {
-      console.log(`📜 DEBUG: Found ${newElements.length} new elements during polling`);
       await this.processNewElements(newElements);
     }
   }
 
   async processNewElements(newElements) {
-    console.log(`📡 DEBUG: Processing ${newElements.length} new elements`);
 
     try {
       newElements.forEach(element => {
@@ -256,7 +223,6 @@ class ContentFilterBase {
         topics: this.currentTopics
       });
 
-      console.log('📡 DEBUG: Polling batch response received:', response);
 
       if (response.error) {
         if (response.error === 'DAILY_LIMIT_EXCEEDED') {
@@ -278,10 +244,8 @@ class ContentFilterBase {
 
         if (result.isAllowed) {
           this.unblurElement(element.container);
-          console.log(`✅ Great Filter: Polling element ${index + 1} allowed: "${element.title}"`);
         } else {
           this.blurBlockedElement(element.container, element.title);
-          console.log(`🚫 Great Filter: Polling element ${index + 1} blocked: "${element.title}"`);
         }
       });
 
@@ -304,12 +268,10 @@ class ContentFilterBase {
       const filteringEnabled = result.filteringEnabled === true;
 
       if (topics.length > 0 && filteringEnabled) {
-        console.log('🚀 DEBUG: Filtering is enabled, starting with topics:', topics);
         this.isFilteringActive = true;
         processElementsFunction(topics);
         startScrollMonitoringFunction(topics);
       } else {
-        console.log('🚀 DEBUG: Filtering is disabled or no topics configured');
       }
     } catch (error) {
       console.error('Error checking filtering state:', error);
@@ -318,10 +280,8 @@ class ContentFilterBase {
 
   setupMessageListener(processElementsFunction, startScrollMonitoringFunction) {
     chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-      console.log('📨 DEBUG: Message received in content script:', request);
 
       if (request.action === 'startFiltering') {
-        console.log('🚀 DEBUG: Starting filtering with topics:', request.topics);
         this.isFilteringActive = true;
         processElementsFunction(request.topics);
         startScrollMonitoringFunction(request.topics);
@@ -329,7 +289,6 @@ class ContentFilterBase {
       }
 
       if (request.action === 'stopFiltering') {
-        console.log('🛑 DEBUG: Stopping filtering');
         this.stopFiltering();
         sendResponse({ success: true });
       }

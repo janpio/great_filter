@@ -1,4 +1,3 @@
-console.log('🔍 Great Filter: YouTube content script loaded');
 
 class YouTubeContentFilter extends ContentFilterBase {
   constructor() {
@@ -6,7 +5,6 @@ class YouTubeContentFilter extends ContentFilterBase {
   }
 
   extractItemElements() {
-    console.log('🔍 DEBUG: Starting extractItemElements()');
     const itemElements = [];
     const processedContainers = new Set();
 
@@ -23,21 +21,15 @@ class YouTubeContentFilter extends ContentFilterBase {
       'ytm-shorts-lockup-view-model'
     ];
 
-    console.log('🔍 DEBUG: Container selectors:', containerSelectors);
 
     containerSelectors.forEach((selector, index) => {
-      console.log(`🔍 DEBUG: Checking selector ${index + 1}: ${selector}`);
       const containers = document.querySelectorAll(selector);
-      console.log(`🔍 DEBUG: Found ${containers.length} containers for selector: ${selector}`);
 
       containers.forEach((container, containerIndex) => {
         if (processedContainers.has(container)) {
-          console.log(`🔍 DEBUG: Skipping already processed container for selector: ${selector}`);
           return;
         }
         processedContainers.add(container);
-
-        console.log(`🔍 DEBUG: Processing container ${containerIndex + 1} for selector: ${selector}`);
 
         const titleSelectors = [
           'yt-formatted-string#video-title',
@@ -61,7 +53,6 @@ class YouTubeContentFilter extends ContentFilterBase {
             titleElement = container.querySelector(titleSelector);
             if (titleElement) {
               usedSelector = titleSelector;
-              console.log(`🔍 DEBUG: Found title element with selector: ${titleSelector}`);
             }
           }
         });
@@ -73,28 +64,19 @@ class YouTubeContentFilter extends ContentFilterBase {
                      titleElement.getAttribute('aria-label')?.trim() ||
                      titleElement.getAttribute('alt')?.trim();
 
-          console.log(`🔍 DEBUG: Extracted title: "${title}" (selector: ${usedSelector})`);
 
           if (title && !this.processedItems.has(title)) {
-            console.log(`🔍 DEBUG: Adding new item: "${title}"`);
             itemElements.push({
               title: title,
               container: container,
               titleElement: titleElement,
               usedSelector: usedSelector
             });
-          } else if (title && this.processedItems.has(title)) {
-            console.log(`🔍 DEBUG: Skipping already processed item: "${title}"`);
-          } else {
-            console.log('🔍 DEBUG: No title found for container');
           }
-        } else {
-          console.log('🔍 DEBUG: No title element found in container');
         }
       });
     });
 
-    console.log(`🔍 DEBUG: Total item elements found: ${itemElements.length}`);
     return itemElements;
   }
 
@@ -115,7 +97,6 @@ class YouTubeContentFilter extends ContentFilterBase {
   }
 
   init() {
-    console.log('🔍 DEBUG: Initial item element check...');
     this.extractItemElements();
 
     this.setupMessageListener(
@@ -133,7 +114,6 @@ class YouTubeContentFilter extends ContentFilterBase {
       }
     );
 
-    console.log('🔍 Great Filter: Ready for YouTube filtering with auto-start support!');
   }
 }
 

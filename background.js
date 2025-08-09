@@ -1,4 +1,3 @@
-console.log('🔧 Great Filter: Background worker loaded');
 
 importScripts('config.js');
 importScripts('shared/prompts.js');
@@ -66,7 +65,6 @@ async function initializeGlobalApiCounter() {
   try {
     const result = await chrome.storage.local.get(['globalApiRequestCount']);
     globalApiRequestCount = result.globalApiRequestCount || 0;
-    console.log('🔧 BACKGROUND DEBUG: Initialized global API counter:', globalApiRequestCount);
   } catch (error) {
     console.error('Error initializing global API counter:', error);
     globalApiRequestCount = 0;
@@ -78,7 +76,6 @@ async function incrementGlobalApiCounter(postCount = 1) {
   globalApiRequestCount += postCount;
   try {
     await chrome.storage.local.set({ globalApiRequestCount });
-    console.log('🔧 BACKGROUND DEBUG: Global API counter incremented by', postCount, 'to:', globalApiRequestCount);
   } catch (error) {
     console.error('Error saving global API counter:', error);
   }
@@ -96,11 +93,8 @@ async function getCurrentTabId() {
 }
 
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-  console.log('📨 BACKGROUND DEBUG: Message received:', request);
 
   if (request.action === 'checkItemTitlesBatch') {
-    console.log('🔧 BACKGROUND DEBUG: Handling checkItemTitlesBatch request');
-    console.log('🔧 BACKGROUND DEBUG: Batch size:', request.items.length);
 
     incrementGlobalApiCounter(request.items.length);
     handleBatchItemTitleCheck(request.items, request.topics, sendResponse);
@@ -109,7 +103,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.action === 'filteringStarted') {
-    console.log('🚀 BACKGROUND DEBUG: Received filteringStarted message');
     getCurrentTabId().then(tabId => {
       if (tabId) {
         tabFilteringStates.set(tabId, 'processing');
@@ -122,7 +115,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.action === 'filteringStopped') {
-    console.log('🚀 BACKGROUND DEBUG: Received filteringStopped message');
     getCurrentTabId().then(tabId => {
       if (tabId) {
         tabFilteringStates.set(tabId, 'inactive');
@@ -133,7 +125,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.action === 'filteringComplete') {
-    console.log('🚀 BACKGROUND DEBUG: Received filteringComplete message');
     getCurrentTabId().then(tabId => {
       if (tabId) {
         tabFilteringStates.set(tabId, 'active');
@@ -144,7 +135,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.action === 'contentProcessing') {
-    console.log('🚀 BACKGROUND DEBUG: Received contentProcessing message');
     getCurrentTabId().then(tabId => {
       if (tabId) {
         tabFilteringStates.set(tabId, 'processing');
@@ -199,14 +189,9 @@ async function initializeIcon() {
 
 
 async function handleBatchItemTitleCheck(items, topics, sendResponse) {
-  console.log('🔧 BACKGROUND DEBUG: Starting handleBatchItemTitleCheck');
-  console.log('🔧 BACKGROUND DEBUG: Items count:', items.length);
-  console.log('🔧 BACKGROUND DEBUG: Topics:', topics);
 
   try {
     const apiConfig = await getApiConfiguration();
-    console.log('🔧 BACKGROUND DEBUG: Using own API key:', apiConfig.useOwnApiKey);
-    console.log('🔧 BACKGROUND DEBUG: API URL:', apiConfig.url);
 
     if (!apiConfig.url) {
       throw new Error('API URL not configured');
@@ -222,9 +207,7 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
 
     const prompt = PromptTemplates.createBatchPrompt(items, topics);
 
-    console.log('🔧 BACKGROUND DEBUG: Full batch prompt created:');
-    console.log('📋 FULL PROMPT:', prompt);
-    console.log('🔧 BACKGROUND DEBUG: Making batch API request...');
+    console.log('Full prompt:\n', prompt);
 
     const requestBody = {
       model: CONFIG.MODEL,
@@ -248,15 +231,11 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
       body: JSON.stringify(requestBody)
     });
 
-    console.log('🔧 BACKGROUND DEBUG: Batch API response status:', response.status);
-    console.log('🔧 BACKGROUND DEBUG: Batch API response OK:', response.ok);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      console.error('🔧 BACKGROUND DEBUG: Batch API error response:', errorData);
 
       if (response.status === 429 && errorData && errorData.error === 'Daily limit exceeded') {
-        console.log('🚫 BACKGROUND DEBUG: Daily limit exceeded from proxy server');
         sendResponse({
           error: 'DAILY_LIMIT_EXCEEDED',
           message: errorData.message,
@@ -272,11 +251,8 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
     }
 
     const data = await response.json();
-    console.log('🔧 BACKGROUND DEBUG: Batch API response data:', JSON.stringify(data, null, 2));
+    console.log('Full response:\n', JSON.stringify(data, null, 2));
 
-    if (data.usageInfo && !apiConfig.useOwnApiKey) {
-      console.log('📊 BACKGROUND DEBUG: Daily usage info:', data.usageInfo);
-    }
 
     if (data.usage) {
       const inputTokens = data.usage.prompt_tokens || 0;
@@ -287,22 +263,14 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
       const outputCost = (outputTokens / 1000000) * 0.40;
       const totalCost = inputCost + outputCost;
 
-      console.log('💰 BATCH TOKEN USAGE - Input:', inputTokens, 'tokens, Output:', outputTokens, 'tokens, Total:', totalTokens, 'tokens');
-      console.log('💰 BATCH COST BREAKDOWN - Input: $' + inputCost.toFixed(6) + ', Output: $' + outputCost.toFixed(6) + ', Total: $' + totalCost.toFixed(6));
-      console.log('💰 BATCH COST PER ITEM - $' + (totalCost / items.length).toFixed(6) + ' per item');
-    } else {
-      console.log('⚠️ BATCH TOKEN WARNING: No usage data found in API response');
-      console.log('⚠️ BATCH RESPONSE KEYS:', Object.keys(data));
     }
 
     if (data.choices && data.choices[0]) {
       const fullResponse = data.choices[0].message.content.trim();
-      console.log('🔧 BACKGROUND DEBUG: Full AI response:', fullResponse);
 
       const lines = fullResponse.split('\n').filter(line => line.trim() !== '');
       const results = [];
 
-      console.log('🔧 BACKGROUND DEBUG: Parsing response lines:', lines);
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
@@ -317,9 +285,6 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
         if (responseLine) {
           const answer = responseLine.toLowerCase();
           isAllowed = answer.includes('yes');
-          console.log(`🔧 BACKGROUND DEBUG: Item ${expectedNumber} "${item.title}" -> ${responseLine} -> ${isAllowed ? 'ALLOWED' : 'BLOCKED'}`);
-        } else {
-          console.warn(`🔧 BACKGROUND DEBUG: No response found for item ${expectedNumber}, defaulting to BLOCKED`);
         }
 
         results.push({
@@ -329,18 +294,16 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
         });
       }
 
-      console.log('🔧 BACKGROUND DEBUG: Final batch results:', results);
 
       sendResponse({
         results: results,
         fullResponse: fullResponse
       });
     } else {
-      console.error('🔧 BACKGROUND DEBUG: Invalid batch API response structure:', data);
       throw new Error('Invalid API response: ' + (data.error?.message || 'Unknown error'));
     }
   } catch (error) {
-    console.error('🔧 BACKGROUND DEBUG: Error in handleBatchItemTitleCheck:', error);
+    console.error('❌ Error in handleBatchItemTitleCheck:', error);
     sendResponse({ error: error.message });
   }
 }
@@ -375,7 +338,6 @@ async function checkAndUpdateIcon(tab) {
 
 
 function setBadge(state, tabId = null) {
-  console.log(`🔧 BACKGROUND DEBUG: Setting badge state to ${state} for tab ${tabId || 'ALL'}`);
 
   let badgeText = '';
   let badgeColor = '#6c757d';
@@ -410,9 +372,8 @@ function setBadge(state, tabId = null) {
     chrome.action.setBadgeText(badgeConfig),
     chrome.action.setBadgeBackgroundColor(badgeColorConfig)
   ]).then(() => {
-    console.log(`✅ BACKGROUND DEBUG: Badge set to ${state} (${badgeText}, ${badgeColor}) for tab ${tabId || 'ALL'}`);
   }).catch(error => {
-    console.error(`❌ BACKGROUND DEBUG: Error setting badge for tab ${tabId || 'ALL'}:`, error);
+    console.error(`❌ Error setting badge for tab ${tabId || 'ALL'}:`, error);
   });
 }
 
