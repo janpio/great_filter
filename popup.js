@@ -611,8 +611,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // About section content
     const aboutTitle = document.getElementById('aboutTitle');
     const aboutDescription = document.getElementById('aboutDescription');
+    const howItWorksTitle = document.getElementById('howItWorksTitle');
+    const howItWorks = document.getElementById('howItWorks');
     const apiTiersTitle = document.getElementById('apiTiersTitle');
+    const supportedSitesTitle = document.getElementById('supportedSitesTitle');
     const supportedSites = document.getElementById('supportedSites');
+    const creditsTitle = document.getElementById('creditsTitle');
+    const credits = document.getElementById('credits');
     
     // API descriptions
     const tooltipFreeTier = document.getElementById('tooltipFreeTier');
@@ -627,11 +632,26 @@ document.addEventListener('DOMContentLoaded', function() {
     if (aboutDescription) {
       aboutDescription.textContent = ABOUT_CONTENT.DESCRIPTION;
     }
+    if (howItWorksTitle) {
+      howItWorksTitle.textContent = ABOUT_CONTENT.HOW_IT_WORKS_TITLE;
+    }
+    if (howItWorks) {
+      howItWorks.textContent = ABOUT_CONTENT.HOW_IT_WORKS;
+    }
     if (apiTiersTitle) {
       apiTiersTitle.textContent = ABOUT_CONTENT.API_TIERS_TITLE;
     }
+    if (supportedSitesTitle) {
+      supportedSitesTitle.textContent = ABOUT_CONTENT.SUPPORTED_SITES_TITLE;
+    }
     if (supportedSites) {
       supportedSites.textContent = ABOUT_CONTENT.SUPPORTED_SITES;
+    }
+    if (creditsTitle) {
+      creditsTitle.textContent = ABOUT_CONTENT.CREDITS_TITLE;
+    }
+    if (credits) {
+      credits.innerHTML = ABOUT_CONTENT.CREDITS;
     }
     
     // Populate API descriptions

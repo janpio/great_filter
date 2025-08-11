@@ -22,13 +22,18 @@ const UI_TIMEOUTS = {
 
 const ABOUT_CONTENT = {
   TITLE: 'About',
-  DESCRIPTION: 'AI-powered content filtering for social media platforms. Filter content based on your interests using intelligent topic detection.',
+  DESCRIPTION: 'AI-powered content filtering for social media platforms. ',
+  HOW_IT_WORKS_TITLE: 'How It Works',
+  HOW_IT_WORKS: 'The extension extracts visible content of individual posts from web pages and sends it to an LLM along with your topic preferences. The LLM decides whether each piece of content should be displayed. Only content approved by the LLM remains visible.',
   API_TIERS_TITLE: 'API Tiers',
-  SUPPORTED_SITES: 'Supports YouTube, Hacker News, Reddit, and X (Twitter)'
+  SUPPORTED_SITES_TITLE: 'Supported Sites',
+  SUPPORTED_SITES: 'YouTube, Hacker News, Reddit, and X',
+  CREDITS_TITLE: 'Credits',
+  CREDITS: '<a href="https://jakubhalmes.com/" target="_blank" style="color: #3b82f6; text-decoration: underline;">Jakub Halmeš</a> & Claude via <a href="https://www.anthropic.com/claude-code" target="_blank" style="color: #3b82f6; text-decoration: underline;">Claude Code</a>'
 };
 
 const API_DESCRIPTIONS = {
-  FREE_TIER: 'No API key required. Daily usage limits apply. Perfect for trying out the extension.',
+  FREE_TIER: 'No API key required. Shared daily limit across all users.',
   FREE_TIER_TITLE: 'Free (Limited)',
   YOUR_API_KEY: 'Use your <a href="https://openrouter.ai" target="_blank" style="color: #3b82f6; text-decoration: underline;">OpenRouter</a> API key for unlimited usage.',
   YOUR_API_KEY_TOOLTIP: 'Your API Key'

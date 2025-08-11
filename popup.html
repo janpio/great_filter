@@ -27,7 +27,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: 
+            background:
                 radial-gradient(ellipse at 25% 60%, rgba(59, 130, 246, 0.4) 0%, rgba(30, 64, 175, 0.2) 30%, transparent 70%),
                 radial-gradient(ellipse at 75% 25%, rgba(99, 102, 241, 0.35) 0%, rgba(67, 56, 202, 0.2) 40%, transparent 80%),
                 radial-gradient(ellipse at 60% 85%, rgba(37, 99, 235, 0.3) 0%, rgba(29, 78, 216, 0.2) 35%, transparent 75%);
@@ -452,7 +452,10 @@
             border: 1px solid #334155;
             border-radius: 8px;
             padding: 20px;
-            max-width: 320px;
+            width: 95vw;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             position: relative;
         }
@@ -495,11 +498,10 @@
         }
 
         .supported-sites {
-            text-align: center;
-            font-style: italic;
-            color: #94a3b8;
-            margin-top: 16px;
-            margin-bottom: 0;
+            color: #cbd5e1;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 12px;
         }
 
         .info-tooltip-close {
@@ -595,17 +597,24 @@
             <div class="info-tooltip-content">
                 <div class="info-tooltip-close" id="infoTooltipClose">×</div>
                 <h3 id="aboutTitle">About</h3>
-                <p id="aboutDescription">AI-powered content filtering for social media platforms. Filter content based on your interests using intelligent topic detection.</p>
-                
+                <p id="aboutDescription"></p>
+
+                <h4 id="howItWorksTitle"></h4>
+                <p id="howItWorks"></p>
+
                 <h4 id="apiTiersTitle">API Tiers</h4>
                 <div class="api-tier">
-                    <strong id="tooltipFreeTier">Free (Limited):</strong> <span id="tooltipFreeTierDesc">No API key required. Daily usage limits apply. Perfect for trying out the extension.</span>
+                    <strong id="tooltipFreeTier"></strong> <span id="tooltipFreeTierDesc"></span>
                 </div>
                 <div class="api-tier">
-                    <strong id="tooltipYourApiKey">Your API Key:</strong> <span id="tooltipYourApiKeyDesc">Use your OpenRouter API key for unlimited usage.</span>
+                    <strong id="tooltipYourApiKey"></strong> <span id="tooltipYourApiKeyDesc"></span>
                 </div>
-                
-                <p class="supported-sites" id="supportedSites">Supports YouTube, Hacker News, Reddit, and X (Twitter)</p>
+
+                <h4 id="supportedSitesTitle"></h4>
+                <p class="supported-sites" id="supportedSites"></p>
+
+                <h4 id="creditsTitle"></h4>
+                <p class="supported-sites" id="credits"></p>
             </div>
         </div>
 
