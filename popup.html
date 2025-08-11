@@ -567,7 +567,7 @@
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="useOwnApiKey" name="apiChoice" class="radio-input" value="own">
-                                <label for="useOwnApiKey" class="radio-label">Bring Your Own Key</label>
+                                <label for="useOwnApiKey" class="radio-label">Your API Key</label>
                             </div>
                         </div>
                         <div class="api-description" id="apiDescription">
@@ -594,24 +594,25 @@
         <div class="info-tooltip" id="infoTooltip">
             <div class="info-tooltip-content">
                 <div class="info-tooltip-close" id="infoTooltipClose">×</div>
-                <h3>About</h3>
-                <p>AI-powered content filtering for social media platforms. Filter content based on your interests using intelligent topic detection.</p>
+                <h3 id="aboutTitle">About</h3>
+                <p id="aboutDescription">AI-powered content filtering for social media platforms. Filter content based on your interests using intelligent topic detection.</p>
                 
-                <h4>API Tiers</h4>
+                <h4 id="apiTiersTitle">API Tiers</h4>
                 <div class="api-tier">
-                    <strong>Free (Limited):</strong> No API key required. Daily usage limits apply. Perfect for trying out the extension.
+                    <strong id="tooltipFreeTier">Free (Limited):</strong> <span id="tooltipFreeTierDesc">No API key required. Daily usage limits apply. Perfect for trying out the extension.</span>
                 </div>
                 <div class="api-tier">
-                    <strong>Bring Your Own Key:</strong> Use your OpenRouter API key for unlimited usage. You control costs and limits.
+                    <strong id="tooltipYourApiKey">Your API Key:</strong> <span id="tooltipYourApiKeyDesc">Use your OpenRouter API key for unlimited usage.</span>
                 </div>
                 
-                <p class="supported-sites">Supports YouTube, Hacker News, Reddit, and X (Twitter)</p>
+                <p class="supported-sites" id="supportedSites">Supports YouTube, Hacker News, Reddit, and X (Twitter)</p>
             </div>
         </div>
 
     </div>
 
     <script src="config.js"></script>
+    <script src="shared/content-base.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

@@ -20,6 +20,20 @@ const UI_TIMEOUTS = {
   POPUP_MESSAGE_DISPLAY: 3000,         // How long popup messages stay visible (ms)
 };
 
+const ABOUT_CONTENT = {
+  TITLE: 'About',
+  DESCRIPTION: 'AI-powered content filtering for social media platforms. Filter content based on your interests using intelligent topic detection.',
+  API_TIERS_TITLE: 'API Tiers',
+  SUPPORTED_SITES: 'Supports YouTube, Hacker News, Reddit, and X (Twitter)'
+};
+
+const API_DESCRIPTIONS = {
+  FREE_TIER: 'No API key required. Daily usage limits apply. Perfect for trying out the extension.',
+  FREE_TIER_TITLE: 'Free (Limited)',
+  YOUR_API_KEY: 'Use your <a href="https://openrouter.ai" target="_blank" style="color: #3b82f6; text-decoration: underline;">OpenRouter</a> API key for unlimited usage.',
+  YOUR_API_KEY_TOOLTIP: 'Your API Key'
+};
+
 class ContentFilterBase {
   constructor() {
     this.processedItems = new Set();
@@ -324,9 +338,9 @@ class ContentFilterBase {
       line-height: 1.4;
     `;
 
-    const resetTime = errorResponse.resetTime ? 
-      new Date(errorResponse.resetTime).toLocaleString(undefined, { 
-        hour: 'numeric', 
+    const resetTime = errorResponse.resetTime ?
+      new Date(errorResponse.resetTime).toLocaleString(undefined, {
+        hour: 'numeric',
         minute: '2-digit'
       }) : 'midnight UTC';
 
