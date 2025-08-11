@@ -9,14 +9,14 @@ async function checkAndIncrementUsage(postCount) {
 
   try {
     const currentUsage = (await redis.get(key)) ?? 0;
-    const newUsage = Number(currentUsage) + Number(postCount);
 
-    console.log(`📊 Redis Debug: key=${key}, currentUsage=${currentUsage}, postCount=${postCount}, newUsage=${newUsage}`);
+    console.log(`📊 Redis Debug: key=${key}, currentUsage=${currentUsage}, postCount=${postCount}, dailyLimit=${DAILY_LIMIT}`);
 
-    if (newUsage > DAILY_LIMIT) {
+    if (Number(currentUsage) >= DAILY_LIMIT) {
       return false;
     }
 
+    const newUsage = Number(currentUsage) + Number(postCount);
     await redis.set(key, newUsage);
     return true;
   } catch (error) {
@@ -48,7 +48,17 @@ export default async function handler(req, res) {
     const usageAllowed = await checkAndIncrementUsage(postCount);
 
     if (!usageAllowed) {
-      return res.status(429).json({ error: 'Daily limit exceeded' });
+      const resetTime = new Date();
+      resetTime.setUTCDate(resetTime.getUTCDate() + 1);
+      resetTime.setUTCHours(0, 0, 0, 0);
+      
+      return res.status(429).json({ 
+        error: 'Daily limit exceeded',
+        message: `Global daily quota reached. Resets at midnight UTC.`,
+        dailyLimit: DAILY_LIMIT,
+        currentUsage: await redis.get(`usage:${new Date().toISOString().split('T')[0]}`) || 0,
+        resetTime: resetTime.toISOString()
+      });
     }
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {

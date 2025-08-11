@@ -3,6 +3,7 @@ const UI_TIMEOUTS = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Popup script loaded!');
   const mainToggle = document.getElementById('mainToggle');
   const topicsDisplay = document.getElementById('topicsDisplay');
   const topicsEdit = document.getElementById('topicsEdit');
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let isMoreExpanded = false;
   let isTopicsEditing = false;
   let isApiKeyEditing = false;
+  let usageInfo = null;
 
   loadSavedTopics();
   loadApiKeySettings();
@@ -67,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   moreBtn.addEventListener('click', function() {
+    console.log('🖱️ More button clicked, current state:', { isMoreExpanded, useProxyChecked: useProxyApiRadio.checked });
     toggleMoreSection();
   });
   
@@ -100,10 +103,12 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   useProxyApiRadio.addEventListener('change', function() {
+    console.log('📻 Proxy radio clicked, current state:', { isMoreExpanded, checked: useProxyApiRadio.checked });
     handleApiChoiceChange();
   });
   
   useOwnApiKeyRadio.addEventListener('change', function() {
+    console.log('📻 Own API radio clicked, current state:', { isMoreExpanded, checked: useOwnApiKeyRadio.checked });
     handleApiChoiceChange();
   });
 
@@ -414,6 +419,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isMoreExpanded) {
       moreContent.classList.remove('hidden');
       moreBtn.textContent = 'Less';
+      // Check usage if free tier is selected
+      if (useProxyApiRadio.checked) {
+        console.log('🔄 More section expanded with free tier selected - checking usage...');
+        checkUsageAvailability();
+      }
     } else {
       moreContent.classList.add('hidden');
       moreBtn.textContent = 'More';
@@ -481,6 +491,12 @@ document.addEventListener('DOMContentLoaded', function() {
     updateApiKeyVisibility();
     updateApiDescription();
     
+    // Check usage if switching to free tier and More is expanded
+    if (useProxyApiRadio.checked && isMoreExpanded) {
+      console.log('🔄 Switched to free tier with More expanded - checking usage...');
+      checkUsageAvailability();
+    }
+    
     chrome.storage.local.set({
       useOwnApiKey: useOwnApiKeyRadio.checked
     }).then(() => {
@@ -492,10 +508,31 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function updateApiDescription() {
+    console.log('🎨 updateApiDescription called - useOwnApiKey:', useOwnApiKeyRadio.checked, 'usageInfo:', usageInfo);
+    
     if (useOwnApiKeyRadio.checked) {
       apiDescription.textContent = 'Use your own OpenRouter API key for unlimited usage. You\'ll be charged directly by OpenRouter.';
     } else {
-      apiDescription.textContent = 'No API key required. Daily usage limits apply. Perfect for trying out the extension.';
+      const baseText = 'No API key required. Daily usage limits apply. Perfect for trying out the extension.';
+      
+      if (usageInfo) {
+        if (usageInfo.hasQueriesAvailable) {
+          const newText = `${baseText}\n✅ Queries available today`;
+          console.log('🎨 Setting description to (available):', newText);
+          apiDescription.textContent = newText;
+        } else {
+          const resetTime = usageInfo.resetTime ? new Date(usageInfo.resetTime).toLocaleString(undefined, { 
+            hour: 'numeric', 
+            minute: '2-digit'
+          }) : 'midnight UTC';
+          const newText = `${baseText}\n❌ Global daily quota reached. Resets at ${resetTime}.`;
+          console.log('🎨 Setting description to (limited):', newText);
+          apiDescription.textContent = newText;
+        }
+      } else {
+        console.log('🎨 Setting description to (no usage info):', baseText);
+        apiDescription.textContent = baseText;
+      }
     }
   }
 
@@ -544,6 +581,31 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     return supportedPatterns.some(pattern => pattern.test(url));
+  }
+
+  async function checkUsageAvailability() {
+    try {
+      const usageUrl = 'https://great-filter-vps.vercel.app/api/usage';
+      console.log('📡 Making usage request to:', usageUrl);
+      
+      const response = await fetch(usageUrl);
+      console.log('📡 Usage response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Usage check failed: ${response.status}`);
+      }
+      
+      usageInfo = await response.json();
+      console.log('✅ Usage info received:', usageInfo);
+      
+      updateApiDescription();
+      console.log('🎨 API description updated with usage info');
+      
+    } catch (error) {
+      console.error('❌ Error checking usage availability:', error);
+      usageInfo = null;
+      updateApiDescription();
+    }
   }
 
   chrome.runtime.onMessage.addListener((request) => {

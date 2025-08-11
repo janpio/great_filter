@@ -324,12 +324,18 @@ class ContentFilterBase {
       line-height: 1.4;
     `;
 
+    const resetTime = errorResponse.resetTime ? 
+      new Date(errorResponse.resetTime).toLocaleString(undefined, { 
+        hour: 'numeric', 
+        minute: '2-digit'
+      }) : 'midnight UTC';
+
     message.innerHTML = `
       <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Great Filter</div>
-      <div style="font-weight: 600; margin-bottom: 8px;">⚠️ Daily Limit Reached</div>
-      <div style="margin-bottom: 8px;">Limit reached for free requests.</div>
+      <div style="font-weight: 600; margin-bottom: 8px;">⚠️ Global Daily Quota Reached</div>
+      <div style="margin-bottom: 8px;">Resets at ${resetTime}.</div>
       <div style="font-size: 12px; opacity: 0.9;">
-        Try again tomorrow or use your own OpenRouter API key.
+        Use your own OpenRouter API key for unlimited access.
       </div>
     `;
 
