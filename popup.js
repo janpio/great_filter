@@ -516,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (usageInfo) {
         if (usageInfo.hasQueriesAvailable) {
-          const newText = `${baseText}\n✅ Queries available today`;
+          const newText = `${baseText}\n✅ Available`;
           console.log('🎨 Setting description to (available):', newText);
           apiDescription.textContent = newText;
         } else {
@@ -618,13 +618,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const supportedSites = document.getElementById('supportedSites');
     const creditsTitle = document.getElementById('creditsTitle');
     const credits = document.getElementById('credits');
-    
+
     // API descriptions
     const tooltipFreeTier = document.getElementById('tooltipFreeTier');
     const tooltipFreeTierDesc = document.getElementById('tooltipFreeTierDesc');
     const tooltipYourApiKey = document.getElementById('tooltipYourApiKey');
     const tooltipYourApiKeyDesc = document.getElementById('tooltipYourApiKeyDesc');
-    
+
     // Populate About content
     if (aboutTitle) {
       aboutTitle.textContent = ABOUT_CONTENT.TITLE;
@@ -653,7 +653,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (credits) {
       credits.innerHTML = ABOUT_CONTENT.CREDITS;
     }
-    
+
     // Populate API descriptions
     if (tooltipFreeTier) {
       tooltipFreeTier.textContent = API_DESCRIPTIONS.FREE_TIER_TITLE;
