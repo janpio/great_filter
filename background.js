@@ -207,7 +207,7 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
           content: prompt
         }
       ],
-      max_tokens: 1000,
+      max_tokens: CONFIG.MAX_TOKENS,
       temperature: 0
     };
 
