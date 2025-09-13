@@ -2,24 +2,22 @@ class PromptTemplates {
   static createBatchPrompt(items, topics) {
     const topicsString = topics.join(', ');
 
-    let prompt = `User preferences: ${topicsString}
+    let prompt = `For each content excerpt, determine if it should be shown (YES) to the user based on their preferences.
 
-For each content excerpt, determine if it should be SHOWN to the user based on their preferences.
-
-STRICT FILTERING RULES:
-- If content is empty, contains only generic text, or lacks meaningful information → NO
-- If content is clearly spam, promotional, or low-quality → NO
-- If content does NOT clearly match the user's specified interests → NO
-- Only say YES if the content genuinely aligns with their preferences and has substance
-
-Be conservative: when in doubt, filter it out (say NO).
+DECISION RULES:
+- DEFAULT: Show content (YES) unless it matches a blocked topic/preference
+- If preferences say "block X", "hide X", "not X", "no X" → content about X gets NO, YES otherwise
+- If preferences say "show X", "include X", "only X" → content about X gets YES, others get NO
 
 Please answer with only numbered responses in the format:
-1. "GPT-5 Release Date" → YES
-2. "Generic clickbait title" → NO
-3. "Python Tutorial" → YES
+1. → YES
+2. → NO
+3. → YES
 etc.
 
+---
+USER FILTERING PREFERENCES: ${topicsString}
+---
 Content:
 `;
 
