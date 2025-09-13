@@ -125,6 +125,14 @@ document.addEventListener('DOMContentLoaded', function() {
     hideInfoTooltip();
   });
 
+  const reviewLink = document.getElementById('reviewLink');
+  reviewLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    chrome.tabs.create({
+      url: 'https://chrome.google.com/webstore/detail/mbifgfgfbnemojmfkckodkikibihcgaj/reviews'
+    });
+  });
+
   function checkTopicsForChanges() {
     const currentTopics = topicsTextarea.value.trim();
     const hasChanges = currentTopics !== originalTopics;
@@ -466,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (currentTopicsArray.length > 0) {
       topicsText.textContent = currentTopicsArray.join(', ');
     } else {
-      topicsText.textContent = 'No topics configured';
+      topicsText.textContent = 'No preferences configured';
     }
   }
 

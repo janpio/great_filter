@@ -192,7 +192,7 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
     }
 
     if (!topics || topics.length === 0) {
-      throw new Error('No topics configured');
+      throw new Error('No preferences configured');
     }
 
     const prompt = PromptTemplates.createBatchPrompt(items, topics);
