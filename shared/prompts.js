@@ -27,6 +27,28 @@ Content:
 
     return prompt;
   }
+
+  static createRecommendationPrompt(items) {
+    let prompt = `Analyze the following content titles and suggest ONE filtering topic that would be most useful.
+
+Requirements:
+- Suggest a topic that appears frequently enough to be worth filtering
+- Format as either "Show only X" or "Block X" depending on what makes sense
+- Be specific and actionable (e.g., "Block Taylor Swift content", "Show only programming tutorials", "Show only music")
+- Only suggest filters you are confident can work with good accuracy
+- Always provide a suggestion - find the best pattern even if content is diverse
+
+Content titles:
+`;
+
+    items.forEach((item, index) => {
+      prompt += `${index + 1}. "${item.title}"\n`;
+    });
+
+    prompt += `\nReturn ONLY the suggested filter topic as a single line.`;
+
+    return prompt;
+  }
 }
 
 if (typeof window !== 'undefined') {

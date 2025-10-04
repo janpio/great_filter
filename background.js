@@ -99,14 +99,19 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'checkItemTitlesBatch') {
 
     incrementGlobalApiCounter(request.items.length);
-    
+
     if (isApiCallInProgress) {
       pendingApiCalls.push({ items: request.items, topics: request.topics, sendResponse });
       return true;
     }
-    
+
     handleBatchItemTitleCheck(request.items, request.topics, sendResponse);
 
+    return true;
+  }
+
+  if (request.action === 'getRecommendedFilter') {
+    handleRecommendedFilter(request.items, sendResponse);
     return true;
   }
 
@@ -152,38 +157,19 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 });
 
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  const tab = await chrome.tabs.get(activeInfo.tabId);
-  await checkAndUpdateIcon(tab);
-
   const savedState = tabFilteringStates.get(activeInfo.tabId);
 });
 
 chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete') {
-    await checkAndUpdateIcon(tab);
-  }
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  initializeIcon();
   initializeGlobalApiCounter();
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-  initializeIcon();
   initializeGlobalApiCounter();
 });
-
-async function initializeIcon() {
-  try {
-    const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-    if (tabs[0]) {
-      await checkAndUpdateIcon(tabs[0]);
-    }
-  } catch (error) {
-    console.error('Error initializing icon:', error);
-  }
-}
 
 
 async function handleBatchItemTitleCheck(items, topics, sendResponse) {
@@ -317,26 +303,78 @@ function processNextPendingCall() {
   }
 }
 
-const SUPPORTED_SITES = [
-  'youtube.com',
-  'news.ycombinator.com',
-];
-
-function isSupportedSite(url) {
-  if (!url) return false;
+async function handleRecommendedFilter(items, sendResponse) {
   try {
-    const hostname = new URL(url).hostname;
-    return SUPPORTED_SITES.some(site => hostname.includes(site));
+    const apiConfig = await getApiConfiguration();
+
+    if (!apiConfig.url) {
+      throw new Error('API URL not configured');
+    }
+
+    if (apiConfig.useOwnApiKey && !apiConfig.apiKey) {
+      throw new Error('API key is required when using own OpenRouter key');
+    }
+
+    if (!items || items.length === 0) {
+      sendResponse({ error: 'No content found on page' });
+      return;
+    }
+
+    const prompt = PromptTemplates.createRecommendationPrompt(items);
+
+    console.log('Recommendation prompt:\n', prompt);
+
+    const requestBody = {
+      model: CONFIG.MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 200,
+      temperature: 1
+    };
+
+    if (!apiConfig.useOwnApiKey) {
+      requestBody.postCount = items.length;
+    }
+
+    const response = await fetch(apiConfig.url, {
+      method: 'POST',
+      headers: apiConfig.headers,
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+
+      if (response.status === 429 && errorData && errorData.error === 'Daily limit exceeded') {
+        sendResponse({
+          error: 'DAILY_LIMIT_EXCEEDED',
+          message: errorData.message,
+          dailyLimit: errorData.dailyLimit,
+          currentUsage: errorData.currentUsage,
+          remaining: errorData.remaining,
+          resetTime: errorData.resetTime
+        });
+        return;
+      }
+
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
+    }
+
+    const data = await response.json();
+    console.log('Recommendation response:\n', JSON.stringify(data, null, 2));
+
+    if (data.choices && data.choices[0]) {
+      const recommendation = data.choices[0].message.content.trim();
+      sendResponse({ recommendation: recommendation });
+    } else {
+      throw new Error('Invalid API response: ' + (data.error?.message || 'Unknown error'));
+    }
   } catch (error) {
-    return false;
+    console.error('❌ Error in handleRecommendedFilter:', error);
+    sendResponse({ error: error.message });
   }
 }
-
-async function checkAndUpdateIcon(tab) {
-  if (!tab || !tab.url) return;
-
-  const isSupported = isSupportedSite(tab.url);
-}
-
-
-
