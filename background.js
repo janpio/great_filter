@@ -3,11 +3,11 @@ importScripts('config.js');
 importScripts('shared/prompts.js');
 
 const POLLING_INTERVALS = {
-  STARTUP_ELEMENT_CHECK: 50,           // How often to check for elements during page load (ms)
-  STARTUP_MAX_ATTEMPTS: 50,            // Maximum attempts to find elements during startup
-  SCROLL_ACTIVE: 100,                  // Fast polling during active scrolling (ms)
-  SCROLL_IDLE: 2000,                   // Slow polling when not scrolling (ms)
-  SCROLL_ACTIVITY_TIMEOUT: 2000,       // Time to wait before considering scrolling "stopped" (ms)
+  STARTUP_ELEMENT_CHECK: 500,           // How often to check for elements during page load (ms)
+  STARTUP_MAX_ATTEMPTS: 2,            // Maximum attempts to find elements during startup
+  SCROLL_ACTIVE: 500,                  // Fast polling during active scrolling (ms)
+  SCROLL_IDLE: 5000,                   // Slow polling when not scrolling (ms)
+  SCROLL_ACTIVITY_TIMEOUT: 5000,       // Time to wait before considering scrolling "stopped" (ms)
 };
 
 const VISUAL_EFFECTS = {
@@ -25,6 +25,8 @@ const UI_TIMEOUTS = {
 
 let lastApiCall = 0;
 const MIN_API_INTERVAL = 100;
+let isApiCallInProgress = false;
+const pendingApiCalls = [];
 
 const tabFilteringStates = new Map();
 let globalApiRequestCount = 0;
@@ -97,6 +99,12 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'checkItemTitlesBatch') {
 
     incrementGlobalApiCounter(request.items.length);
+    
+    if (isApiCallInProgress) {
+      pendingApiCalls.push({ items: request.items, topics: request.topics, sendResponse });
+      return true;
+    }
+    
     handleBatchItemTitleCheck(request.items, request.topics, sendResponse);
 
     return true;
@@ -179,6 +187,7 @@ async function initializeIcon() {
 
 
 async function handleBatchItemTitleCheck(items, topics, sendResponse) {
+  isApiCallInProgress = true;
 
   try {
     const apiConfig = await getApiConfiguration();
@@ -295,6 +304,16 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
   } catch (error) {
     console.error('❌ Error in handleBatchItemTitleCheck:', error);
     sendResponse({ error: error.message });
+  } finally {
+    isApiCallInProgress = false;
+    processNextPendingCall();
+  }
+}
+
+function processNextPendingCall() {
+  if (pendingApiCalls.length > 0 && !isApiCallInProgress) {
+    const nextCall = pendingApiCalls.shift();
+    handleBatchItemTitleCheck(nextCall.items, nextCall.topics, nextCall.sendResponse);
   }
 }
 

@@ -218,9 +218,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
       showMessage('Topics saved successfully!');
 
-      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-      if (tabs[0]) {
-        await chrome.tabs.reload(tabs[0].id);
+      // Only reload if filtering is currently enabled
+      if (isFiltering) {
+        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+        if (tabs[0]) {
+          await chrome.tabs.reload(tabs[0].id);
+        }
       }
 
       console.log('Topics saved:', topics);
