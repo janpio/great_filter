@@ -20,6 +20,12 @@
             position: relative;
             display: flex;
             flex-direction: column;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        body.dark {
+            background: #1f2937;
+            color: #e5e7eb;
         }
 
         .container {
@@ -27,6 +33,40 @@
             padding: 30px 20px 80px 20px;
             display: flex;
             flex-direction: column;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            background: #e5e7eb;
+            color: #3b82f6;
+        }
+
+        body.dark .theme-toggle {
+            background: #374151;
+            color: #9ca3af;
+        }
+
+        body.dark .theme-toggle:hover {
+            background: #4b5563;
+            color: #3b82f6;
         }
 
         .bottom-bar {
@@ -41,6 +81,12 @@
             align-items: center;
             justify-content: center;
             gap: 0;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        body.dark .bottom-bar {
+            background: #111827;
+            border-top-color: #374151;
         }
 
         .bottom-icon {
@@ -60,6 +106,15 @@
 
         .bottom-icon:hover {
             background: #e5e7eb;
+            color: #3b82f6;
+        }
+
+        body.dark .bottom-icon {
+            color: #9ca3af;
+        }
+
+        body.dark .bottom-icon:hover {
+            background: #374151;
             color: #3b82f6;
         }
 
@@ -156,10 +211,19 @@
             background: #ffffff;
             border-radius: 6px;
             border: 1px solid #d1d5db;
-            transition: border-color 0.2s ease;
+            transition: all 0.2s ease;
         }
 
         .topics-display:hover {
+            border-color: #3b82f6;
+        }
+
+        body.dark .topics-display {
+            background: #111827;
+            border-color: #374151;
+        }
+
+        body.dark .topics-display:hover {
             border-color: #3b82f6;
         }
 
@@ -168,6 +232,10 @@
             font-size: 14px;
             color: #4b5563;
             font-style: italic;
+        }
+
+        body.dark .topics-text {
+            color: #9ca3af;
         }
 
         .edit-btn {
@@ -187,6 +255,10 @@
             color: #ffffff;
         }
 
+        body.dark .edit-btn {
+            background: #111827;
+        }
+
         .topics-edit {
             display: flex;
             align-items: flex-start;
@@ -204,7 +276,7 @@
             font-size: 13px;
             line-height: 1.5;
             resize: vertical;
-            transition: border-color 0.2s ease;
+            transition: all 0.2s ease;
             background: #ffffff;
             color: #1f2937;
         }
@@ -217,6 +289,16 @@
 
         .topics-textarea::placeholder {
             color: #9ca3af;
+        }
+
+        body.dark .topics-textarea {
+            background: #111827;
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+
+        body.dark .topics-textarea::placeholder {
+            color: #6b7280;
         }
 
         .save-btn {
@@ -281,6 +363,13 @@
             z-index: 1000;
             padding: 20px;
             overflow-y: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        body.dark .settings-view,
+        body.dark .info-view,
+        body.dark .credits-view {
+            background: #1f2937;
         }
 
         .view-header {
@@ -289,6 +378,11 @@
             margin-bottom: 20px;
             padding-bottom: 16px;
             border-bottom: 1px solid #e5e7eb;
+            transition: border-color 0.2s ease;
+        }
+
+        body.dark .view-header {
+            border-bottom-color: #374151;
         }
 
         .back-btn {
@@ -312,10 +406,25 @@
             color: #3b82f6;
         }
 
+        body.dark .back-btn {
+            background: #374151;
+            color: #9ca3af;
+        }
+
+        body.dark .back-btn:hover {
+            background: #4b5563;
+            color: #3b82f6;
+        }
+
         .view-title {
             font-size: 18px;
             font-weight: 600;
             color: #1f2937;
+            transition: color 0.2s ease;
+        }
+
+        body.dark .view-title {
+            color: #e5e7eb;
         }
 
         .section-title {
@@ -323,6 +432,11 @@
             font-weight: 600;
             color: #1f2937;
             margin-bottom: 12px;
+            transition: color 0.2s ease;
+        }
+
+        body.dark .section-title {
+            color: #e5e7eb;
         }
 
         .input-group {
@@ -335,6 +449,11 @@
             font-weight: 500;
             font-size: 13px;
             color: #374151;
+            transition: color 0.2s ease;
+        }
+
+        body.dark .input-label {
+            color: #d1d5db;
         }
 
         .radio-group {
@@ -358,6 +477,15 @@
             background-color: #f0f9ff;
         }
 
+        body.dark .radio-option {
+            border-color: #374151;
+        }
+
+        body.dark .radio-option:hover {
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
         .radio-input {
             margin-right: 10px;
             cursor: pointer;
@@ -368,6 +496,11 @@
             color: #1f2937;
             cursor: pointer;
             flex: 1;
+            transition: color 0.2s ease;
+        }
+
+        body.dark .radio-label {
+            color: #e5e7eb;
         }
 
         .api-description {
@@ -379,6 +512,12 @@
             margin-top: 12px;
             line-height: 1.5;
             white-space: pre-line;
+            transition: all 0.2s ease;
+        }
+
+        body.dark .api-description {
+            color: #9ca3af;
+            background: #111827;
         }
 
         .api-key-section {
@@ -392,7 +531,7 @@
             border-radius: 6px;
             font-family: monospace;
             font-size: 13px;
-            transition: border-color 0.2s ease;
+            transition: all 0.2s ease;
             background: #ffffff;
             color: #1f2937;
         }
@@ -407,16 +546,31 @@
             color: #9ca3af;
         }
 
+        body.dark .api-key-input {
+            background: #111827;
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+
+        body.dark .api-key-input::placeholder {
+            color: #6b7280;
+        }
+
         .info-content h3 {
             color: #1f2937;
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 12px;
             margin-top: 20px;
+            transition: color 0.2s ease;
         }
 
         .info-content h3:first-child {
             margin-top: 0;
+        }
+
+        body.dark .info-content h3 {
+            color: #e5e7eb;
         }
 
         .info-content p {
@@ -424,6 +578,11 @@
             font-size: 14px;
             line-height: 1.6;
             margin-bottom: 12px;
+            transition: color 0.2s ease;
+        }
+
+        body.dark .info-content p {
+            color: #9ca3af;
         }
 
         .info-content .api-tier {
@@ -435,6 +594,13 @@
             font-size: 13px;
             color: #374151;
             line-height: 1.5;
+            transition: all 0.2s ease;
+        }
+
+        body.dark .info-content .api-tier {
+            background: #111827;
+            border-color: #374151;
+            color: #d1d5db;
         }
 
         .info-content .api-tier strong {
@@ -452,6 +618,8 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="themeToggle">💡</button>
+
     <div class="container">
         <div class="main-content">
             <div class="toggle-section">

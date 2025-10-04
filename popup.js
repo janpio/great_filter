@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const topicsTextarea = document.getElementById('topics');
   const topicsSaveBtn = document.getElementById('topicsSaveBtn');
 
+  const themeToggle = document.getElementById('themeToggle');
+
   const settingsIcon = document.getElementById('settingsIcon');
   const infoIcon = document.getElementById('infoIcon');
   const creditsIcon = document.getElementById('creditsIcon');
@@ -35,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadSavedTopics();
   loadApiKeySettings();
+  loadTheme();
   checkCurrentFilteringState();
   checkSupportedSite();
   initializeTooltipContent();
@@ -49,6 +52,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const newHeight = Math.min(scrollHeight, maxHeight);
     topicsTextarea.style.height = newHeight + 'px';
   }
+
+  themeToggle.addEventListener('click', function() {
+    toggleTheme();
+  });
 
   settingsIcon.addEventListener('click', function() {
     showView('settings');
@@ -157,6 +164,31 @@ document.addEventListener('DOMContentLoaded', function() {
     settingsView.classList.add('hidden');
     infoView.classList.add('hidden');
     creditsView.classList.add('hidden');
+  }
+
+  async function loadTheme() {
+    try {
+      const result = await chrome.storage.local.get(['darkMode']);
+      const darkMode = result.darkMode === true;
+      if (darkMode) {
+        document.body.classList.add('dark');
+        themeToggle.textContent = '☀️';
+      } else {
+        themeToggle.textContent = '🌙';
+      }
+    } catch (error) {
+      console.error('Error loading theme:', error);
+    }
+  }
+
+  async function toggleTheme() {
+    const isDark = document.body.classList.toggle('dark');
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+    try {
+      await chrome.storage.local.set({ darkMode: isDark });
+    } catch (error) {
+      console.error('Error saving theme:', error);
+    }
   }
 
   async function startFilteringAction() {
