@@ -10,30 +10,27 @@ document.addEventListener('DOMContentLoaded', function() {
   const topicsTextarea = document.getElementById('topics');
   const topicsSaveBtn = document.getElementById('topicsSaveBtn');
 
-  const moreBtn = document.getElementById('moreBtn');
-  const moreContent = document.getElementById('moreContent');
+  const settingsIcon = document.getElementById('settingsIcon');
+  const infoIcon = document.getElementById('infoIcon');
+  const creditsIcon = document.getElementById('creditsIcon');
+
+  const settingsView = document.getElementById('settingsView');
+  const infoView = document.getElementById('infoView');
+  const creditsView = document.getElementById('creditsView');
+
+  const settingsBackBtn = document.getElementById('settingsBackBtn');
+  const infoBackBtn = document.getElementById('infoBackBtn');
+  const creditsBackBtn = document.getElementById('creditsBackBtn');
+
   const useProxyApiRadio = document.getElementById('useProxyApi');
   const useOwnApiKeyRadio = document.getElementById('useOwnApiKey');
   const apiKeySection = document.getElementById('apiKeySection');
-  const apiKeyDisplay = document.getElementById('apiKeyDisplay');
-  const apiKeyEdit = document.getElementById('apiKeyEdit');
-  const apiKeyText = document.getElementById('apiKeyText');
-  const apiKeyEditBtn = document.getElementById('apiKeyEditBtn');
   const apiKeyInput = document.getElementById('apiKey');
-  const apiKeySaveBtn = document.getElementById('apiKeySaveBtn');
-
-  const savedMessage = document.getElementById('savedMessage');
-  const filterMessage = document.getElementById('filterMessage');
-  const infoIcon = document.getElementById('infoIcon');
-  const infoTooltip = document.getElementById('infoTooltip');
-  const infoTooltipClose = document.getElementById('infoTooltipClose');
   const apiDescription = document.getElementById('apiDescription');
 
   let isFiltering = false;
   let isOnSupportedSite = false;
-  let isMoreExpanded = false;
   let isTopicsEditing = false;
-  let isApiKeyEditing = false;
   let usageInfo = null;
 
   loadSavedTopics();
@@ -43,8 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeTooltipContent();
 
   let originalTopics = '';
-  let originalUseOwnApiKey = false;
-  let originalApiKey = '';
   let currentTopicsArray = [];
 
   function autoResizeTextarea() {
@@ -54,6 +49,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const newHeight = Math.min(scrollHeight, maxHeight);
     topicsTextarea.style.height = newHeight + 'px';
   }
+
+  settingsIcon.addEventListener('click', function() {
+    showView('settings');
+  });
+
+  infoIcon.addEventListener('click', function() {
+    showView('info');
+  });
+
+  creditsIcon.addEventListener('click', function() {
+    showView('credits');
+  });
+
+  settingsBackBtn.addEventListener('click', function() {
+    hideAllViews();
+  });
+
+  infoBackBtn.addEventListener('click', function() {
+    hideAllViews();
+  });
+
+  creditsBackBtn.addEventListener('click', function() {
+    hideAllViews();
+  });
 
   mainToggle.addEventListener('click', function() {
     if (!isOnSupportedSite) {
@@ -67,11 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  moreBtn.addEventListener('click', function() {
-    console.log('🖱️ More button clicked, current state:', { isMoreExpanded, useProxyChecked: useProxyApiRadio.checked });
-    toggleMoreSection();
-  });
-
   topicsEditBtn.addEventListener('click', function() {
     enterTopicsEditMode();
   });
@@ -82,47 +96,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  apiKeyEditBtn.addEventListener('click', function() {
-    enterApiKeyEditMode();
-  });
-
-  apiKeySaveBtn.addEventListener('click', function() {
-    if (apiKeySaveBtn.classList.contains('active')) {
-      saveApiKey();
-    }
-  });
-
   topicsTextarea.addEventListener('input', function() {
     autoResizeTextarea();
     checkTopicsForChanges();
   });
 
-  apiKeyInput.addEventListener('input', function() {
-    checkApiKeyForChanges();
-  });
-
   useProxyApiRadio.addEventListener('change', function() {
-    console.log('📻 Proxy radio clicked, current state:', { isMoreExpanded, checked: useProxyApiRadio.checked });
+    console.log('📻 Proxy radio clicked, current state:', { checked: useProxyApiRadio.checked });
     handleApiChoiceChange();
   });
 
   useOwnApiKeyRadio.addEventListener('change', function() {
-    console.log('📻 Own API radio clicked, current state:', { isMoreExpanded, checked: useOwnApiKeyRadio.checked });
+    console.log('📻 Own API radio clicked, current state:', { checked: useOwnApiKeyRadio.checked });
     handleApiChoiceChange();
   });
 
-  infoIcon.addEventListener('click', function() {
-    showInfoTooltip();
-  });
-
-  infoTooltip.addEventListener('click', function(e) {
-    if (e.target === infoTooltip) {
-      hideInfoTooltip();
-    }
-  });
-
-  infoTooltipClose.addEventListener('click', function() {
-    hideInfoTooltip();
+  apiKeyInput.addEventListener('input', function() {
+    saveApiKeyImmediate();
   });
 
   const reviewLink = document.getElementById('reviewLink');
@@ -146,17 +136,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function checkApiKeyForChanges() {
-    const currentApiKey = apiKeyInput.value.trim();
-    const hasChanges = currentApiKey !== originalApiKey;
+  function showView(viewName) {
+    settingsView.classList.add('hidden');
+    infoView.classList.add('hidden');
+    creditsView.classList.add('hidden');
 
-    if (hasChanges) {
-      apiKeySaveBtn.classList.remove('inactive');
-      apiKeySaveBtn.classList.add('active');
-    } else {
-      apiKeySaveBtn.classList.remove('active');
-      apiKeySaveBtn.classList.add('inactive');
+    if (viewName === 'settings') {
+      settingsView.classList.remove('hidden');
+      if (useProxyApiRadio.checked) {
+        checkUsageAvailability();
+      }
+    } else if (viewName === 'info') {
+      infoView.classList.remove('hidden');
+    } else if (viewName === 'credits') {
+      creditsView.classList.remove('hidden');
     }
+  }
+
+  function hideAllViews() {
+    settingsView.classList.add('hidden');
+    infoView.classList.add('hidden');
+    creditsView.classList.add('hidden');
   }
 
   async function startFilteringAction() {
@@ -233,42 +233,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  async function saveApiKey() {
+  async function saveApiKeyImmediate() {
     const apiKey = apiKeyInput.value.trim();
     const useOwnApiKey = useOwnApiKeyRadio.checked;
 
-    if (useOwnApiKey && !apiKey) {
-      showMessage('Please enter your OpenRouter API key', true);
-      return;
-    }
-
-    if (useOwnApiKey && !apiKey.startsWith('sk-or-')) {
-      showMessage('OpenRouter API key should start with "sk-or-"', true);
-      return;
-    }
-
     try {
       await chrome.storage.local.set({
-        useOwnApiKey: useOwnApiKey,
         apiKey: apiKey
       });
-
-      originalUseOwnApiKey = useOwnApiKey;
-      originalApiKey = apiKey;
-      exitApiKeyEditMode();
-      updateApiKeyDisplay();
-
-      showMessage('API key saved successfully!');
-
-      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-      if (tabs[0]) {
-        await chrome.tabs.reload(tabs[0].id);
-      }
 
       console.log('API key saved:', { useOwnApiKey, hasApiKey: !!apiKey });
     } catch (error) {
       console.error('Error saving API key:', error);
-      showMessage('Error saving API key: ' + error.message, true);
     }
   }
 
@@ -307,10 +283,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       apiKeyInput.value = apiKey;
 
-      originalUseOwnApiKey = useOwnApiKey;
-      originalApiKey = apiKey;
-
-      updateApiKeyDisplay();
       updateApiKeyVisibility();
       updateApiDescription();
     } catch (error) {
@@ -424,22 +396,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function toggleMoreSection() {
-    isMoreExpanded = !isMoreExpanded;
-    if (isMoreExpanded) {
-      moreContent.classList.remove('hidden');
-      moreBtn.textContent = 'Less';
-      // Check usage if free tier is selected
-      if (useProxyApiRadio.checked) {
-        console.log('🔄 More section expanded with free tier selected - checking usage...');
-        checkUsageAvailability();
-      }
-    } else {
-      moreContent.classList.add('hidden');
-      moreBtn.textContent = 'More';
-    }
-  }
-
   function enterTopicsEditMode() {
     isTopicsEditing = true;
     topicsDisplay.classList.add('hidden');
@@ -457,35 +413,11 @@ document.addEventListener('DOMContentLoaded', function() {
     topicsSaveBtn.classList.add('inactive');
   }
 
-  function enterApiKeyEditMode() {
-    isApiKeyEditing = true;
-    apiKeyDisplay.classList.add('hidden');
-    apiKeyEdit.classList.remove('hidden');
-    apiKeyInput.focus();
-    checkApiKeyForChanges();
-  }
-
-  function exitApiKeyEditMode() {
-    isApiKeyEditing = false;
-    apiKeyEdit.classList.add('hidden');
-    apiKeyDisplay.classList.remove('hidden');
-    apiKeySaveBtn.classList.remove('active');
-    apiKeySaveBtn.classList.add('inactive');
-  }
-
   function updateTopicsDisplay() {
     if (currentTopicsArray.length > 0) {
       topicsText.textContent = currentTopicsArray.join(', ');
     } else {
       topicsText.textContent = 'No preferences configured';
-    }
-  }
-
-  function updateApiKeyDisplay() {
-    if (originalUseOwnApiKey && originalApiKey) {
-      apiKeyText.textContent = 'API Key configured';
-    } else {
-      apiKeyText.textContent = 'No API key configured';
     }
   }
 
@@ -501,16 +433,14 @@ document.addEventListener('DOMContentLoaded', function() {
     updateApiKeyVisibility();
     updateApiDescription();
 
-    // Check usage if switching to free tier and More is expanded
-    if (useProxyApiRadio.checked && isMoreExpanded) {
-      console.log('🔄 Switched to free tier with More expanded - checking usage...');
+    if (useProxyApiRadio.checked) {
+      console.log('🔄 Switched to free tier - checking usage...');
       checkUsageAvailability();
     }
 
     chrome.storage.local.set({
       useOwnApiKey: useOwnApiKeyRadio.checked
     }).then(() => {
-      originalUseOwnApiKey = useOwnApiKeyRadio.checked;
       console.log('API choice updated:', useOwnApiKeyRadio.checked ? 'own' : 'proxy');
     }).catch(error => {
       console.error('Error updating API choice:', error);
@@ -544,14 +474,6 @@ document.addEventListener('DOMContentLoaded', function() {
         apiDescription.textContent = baseText;
       }
     }
-  }
-
-  function showInfoTooltip() {
-    infoTooltip.classList.add('show');
-  }
-
-  function hideInfoTooltip() {
-    infoTooltip.classList.remove('show');
   }
 
   function showMessage(text, isError = false) {
