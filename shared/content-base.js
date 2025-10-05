@@ -57,6 +57,7 @@ const CHANGELOG = {
       'Add AI filtering recommendations',
       'Switch model to google/gemini-2.5-flash-lite-preview-09-2025',
       'Update filtering prompt',
+      'Update polling intervals',
       'Add feedback form',
     ]
   }
