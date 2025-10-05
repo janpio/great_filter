@@ -238,7 +238,12 @@
             color: #9ca3af;
         }
 
-        .edit-btn {
+        .topics-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .edit-btn, .recommend-btn {
             padding: 5px 10px;
             font-size: 12px;
             background: #ffffff;
@@ -250,13 +255,17 @@
             font-weight: 500;
         }
 
-        .edit-btn:hover {
+        .edit-btn:hover, .recommend-btn:hover {
             background: #3b82f6;
             color: #ffffff;
         }
 
-        body.dark .edit-btn {
+        body.dark .edit-btn, body.dark .recommend-btn {
             background: #111827;
+        }
+
+        .recommend-btn {
+            padding: 5px 8px;
         }
 
         .topics-edit {
@@ -727,7 +736,10 @@
             <div class="topics-section">
                 <div class="topics-display" id="topicsDisplay">
                     <div class="topics-text" id="topicsText">No preferences configured</div>
-                    <button class="edit-btn" id="topicsEditBtn">Edit</button>
+                    <div class="topics-buttons">
+                        <button class="recommend-btn" id="recommendBtn" title="Get AI recommendation">💡</button>
+                        <button class="edit-btn" id="topicsEditBtn">Edit</button>
+                    </div>
                 </div>
                 <div class="topics-edit hidden" id="topicsEdit">
                     <textarea id="topics" class="topics-textarea" placeholder="Examples:&#10;&#10;Technology and programming, but not AI-related content&#10;&#10;Only musical videos and songs&#10;&#10;Block all political content and news"></textarea>

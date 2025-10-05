@@ -21,26 +21,26 @@
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
-      "js": ["shared/content-base.js", "shared/prompts.js", "content-scripts/youtube.js"],
+      "js": ["config.js", "shared/content-base.js", "shared/prompts.js", "content-scripts/youtube.js"],
       "css": ["shared/filter-styles.css"],
       "run_at": "document_end"
     },
     {
       "matches": ["https://news.ycombinator.com/*"],
       "exclude_matches": ["https://news.ycombinator.com/item*"],
-      "js": ["shared/content-base.js", "shared/prompts.js", "content-scripts/hackernews.js"],
+      "js": ["config.js", "shared/content-base.js", "shared/prompts.js", "content-scripts/hackernews.js"],
       "css": ["shared/filter-styles.css"],
       "run_at": "document_end"
     },
     {
       "matches": ["https://*.reddit.com/*"],
-      "js": ["shared/content-base.js", "shared/prompts.js", "content-scripts/reddit.js"],
+      "js": ["config.js", "shared/content-base.js", "shared/prompts.js", "content-scripts/reddit.js"],
       "css": ["shared/filter-styles.css"],
       "run_at": "document_end"
     },
     {
       "matches": ["https://x.com/*"],
-      "js": ["shared/content-base.js", "shared/prompts.js", "content-scripts/x.js"],
+      "js": ["config.js", "shared/content-base.js", "shared/prompts.js", "content-scripts/x.js"],
       "css": ["shared/filter-styles.css"],
       "run_at": "document_end"
     }

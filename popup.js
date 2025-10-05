@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const topicsEditBtn = document.getElementById('topicsEditBtn');
   const topicsTextarea = document.getElementById('topics');
   const topicsSaveBtn = document.getElementById('topicsSaveBtn');
+  const recommendBtn = document.getElementById('recommendBtn');
 
   const themeToggle = document.getElementById('themeToggle');
 
@@ -95,6 +96,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   topicsEditBtn.addEventListener('click', function() {
     enterTopicsEditMode();
+  });
+
+  recommendBtn.addEventListener('click', function() {
+    getRecommendedFilterFromPage();
   });
 
   topicsSaveBtn.addEventListener('click', function() {
@@ -554,6 +559,49 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     return supportedPatterns.some(pattern => pattern.test(url));
+  }
+
+  async function getRecommendedFilterFromPage() {
+    try {
+      if (!isOnSupportedSite) {
+        showMessage('Please open a supported website', true);
+        return;
+      }
+
+      recommendBtn.disabled = true;
+      recommendBtn.textContent = '⏳';
+
+      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+      if (!tabs[0]) {
+        showMessage('No active tab found', true);
+        recommendBtn.disabled = false;
+        recommendBtn.textContent = '💡';
+        return;
+      }
+
+      const response = await chrome.tabs.sendMessage(tabs[0].id, {
+        action: 'getRecommendedFilter'
+      });
+
+      recommendBtn.disabled = false;
+      recommendBtn.textContent = '💡';
+
+      if (response && response.recommendation) {
+        topicsTextarea.value = response.recommendation;
+        enterTopicsEditMode();
+        autoResizeTextarea();
+        checkTopicsForChanges();
+      } else if (response && response.error) {
+        showMessage(response.error, true);
+      } else {
+        showMessage('Could not get recommendation', true);
+      }
+    } catch (error) {
+      console.error('Error getting recommendation:', error);
+      showMessage('Error: ' + error.message, true);
+      recommendBtn.disabled = false;
+      recommendBtn.textContent = '💡';
+    }
   }
 
   async function checkUsageAvailability() {

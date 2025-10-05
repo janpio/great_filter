@@ -341,6 +341,15 @@ class ContentFilterBase {
         });
       }
 
+      if (request.action === 'getRecommendedFilter') {
+        this.getRecommendedFilter().then(result => {
+          sendResponse(result);
+        }).catch(error => {
+          sendResponse({ error: error.message });
+        });
+        return true;
+      }
+
 
       return true;
     });
@@ -387,6 +396,47 @@ class ContentFilterBase {
         message.parentNode.removeChild(message);
       }
     }, 10000);
+  }
+
+  async getRecommendedFilter() {
+    try {
+      if (this.isFilteringActive) {
+        return { error: 'AI recommendations are only available when filtering is disabled' };
+      }
+
+      if (typeof this.extractItemElements !== 'function') {
+        console.error('❌ extractItemElements method not available');
+        return {};
+      }
+
+      const elements = this.extractItemElements();
+
+      if (!elements || elements.length === 0) {
+        return {};
+      }
+
+      const limitedElements = elements.slice(0, CONFIG.MAX_RECOMMENDATION_ITEMS);
+
+      console.log(`Found ${elements.length} content items, using ${limitedElements.length} for recommendation`);
+
+      const items = limitedElements.map(element => ({
+        title: element.title
+      }));
+
+      const response = await chrome.runtime.sendMessage({
+        action: 'getRecommendedFilter',
+        items: items
+      });
+
+      if (response.error) {
+        return { error: response.error };
+      }
+
+      return { recommendation: response.recommendation };
+    } catch (error) {
+      console.error('❌ Error getting recommended filter:', error);
+      return { error: error.message };
+    }
   }
 }
 
