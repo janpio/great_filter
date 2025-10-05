@@ -54,9 +54,10 @@ const CHANGELOG = {
     title: 'Version 1.1.0',
     changes: [
       'UI redesign with light/dark theme support',
-      'Updated filtering prompt',
-      'Switched model to google/gemini-2.5-flash-lite-preview-09-2025',
-      'Added feedback form',
+      'Add AI filtering recommendations',
+      'Switch model to google/gemini-2.5-flash-lite-preview-09-2025',
+      'Update filtering prompt',
+      'Add feedback form',
     ]
   }
 };
