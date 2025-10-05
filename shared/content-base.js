@@ -53,10 +53,10 @@ const CHANGELOG = {
   '1.1.0': {
     title: 'Version 1.1.0',
     changes: [
-      'Facelift',
-      'AI-generated examples',
-      'Switch model to google/gemini-2.5-flash-lite-preview-09-2025',
-      'Add feedback form'
+      'UI redesign with light/dark theme support',
+      'Updated filtering prompt',
+      'Switched model to google/gemini-2.5-flash-lite-preview-09-2025',
+      'Added feedback form',
     ]
   }
 };
