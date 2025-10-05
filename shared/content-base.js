@@ -29,7 +29,8 @@ const ABOUT_CONTENT = {
   SUPPORTED_SITES_TITLE: 'Supported Sites',
   SUPPORTED_SITES: 'YouTube, Hacker News, Reddit, and X',
   CREDITS_TITLE: 'Credits',
-  CREDITS: '<a href="https://jakubhalmes.com/" target="_blank" style="color: #3b82f6; text-decoration: underline;">Jakub Halmeš</a> & Claude via <a href="https://www.anthropic.com/claude-code" target="_blank" style="color: #3b82f6; text-decoration: underline;">Claude Code</a>'
+  CREDITS: '<a href="https://jakubhalmes.com/" target="_blank" style="color: #3b82f6; text-decoration: underline;">Jakub Halmeš</a> & Claude via <a href="https://www.anthropic.com/claude-code" target="_blank" style="color: #3b82f6; text-decoration: underline;">Claude Code</a>',
+  CHANGELOG_TITLE: 'Changelog'
 };
 
 const API_DESCRIPTIONS = {
@@ -37,6 +38,27 @@ const API_DESCRIPTIONS = {
   FREE_TIER_TITLE: 'Free (Limited)',
   YOUR_API_KEY: 'Use your <a href="https://openrouter.ai" target="_blank" style="color: #3b82f6; text-decoration: underline;">OpenRouter</a> API key for unlimited usage.',
   YOUR_API_KEY_TOOLTIP: 'Your API Key'
+};
+
+const FEEDBACK_CONTENT = {
+  TITLE: 'Feedback',
+  DESCRIPTION: 'Enjoying the extension or have ideas for improvement? Your feedback is appreciated!',
+  REVIEW_TEXT: 'Leave a review on the Chrome Web Store',
+  OR_TEXT: 'or',
+  FORM_TEXT: 'Fill out anonymous feedback form',
+  FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLScGn0NmNMZYvo-kDZK5JzdELkQhcS7N16TJUoqN6psUxpfZBA/viewform?usp=header'
+};
+
+const CHANGELOG = {
+  '1.1.0': {
+    title: 'Version 1.1.0',
+    changes: [
+      'Facelift',
+      'AI-generated examples',
+      'Switch model to google/gemini-2.5-flash-lite-preview-09-2025',
+      'Add feedback form'
+    ]
+  }
 };
 
 class ContentFilterBase {

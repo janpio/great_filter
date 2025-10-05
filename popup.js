@@ -14,15 +14,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const settingsIcon = document.getElementById('settingsIcon');
   const infoIcon = document.getElementById('infoIcon');
-  const creditsIcon = document.getElementById('creditsIcon');
+  const feedbackIcon = document.getElementById('feedbackIcon');
 
   const settingsView = document.getElementById('settingsView');
   const infoView = document.getElementById('infoView');
-  const creditsView = document.getElementById('creditsView');
+  const feedbackView = document.getElementById('feedbackView');
 
   const settingsBackBtn = document.getElementById('settingsBackBtn');
   const infoBackBtn = document.getElementById('infoBackBtn');
-  const creditsBackBtn = document.getElementById('creditsBackBtn');
+  const feedbackBackBtn = document.getElementById('feedbackBackBtn');
 
   const useProxyApiRadio = document.getElementById('useProxyApi');
   const useOwnApiKeyRadio = document.getElementById('useOwnApiKey');
@@ -65,8 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
     showView('info');
   });
 
-  creditsIcon.addEventListener('click', function() {
-    showView('credits');
+  feedbackIcon.addEventListener('click', function() {
+    showView('feedback');
   });
 
   settingsBackBtn.addEventListener('click', function() {
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     hideAllViews();
   });
 
-  creditsBackBtn.addEventListener('click', function() {
+  feedbackBackBtn.addEventListener('click', function() {
     hideAllViews();
   });
 
@@ -122,8 +122,17 @@ document.addEventListener('DOMContentLoaded', function() {
     saveApiKeyImmediate();
   });
 
-  const reviewLink = document.getElementById('reviewLink');
-  reviewLink.addEventListener('click', function(e) {
+  const feedbackFormLink = document.getElementById('feedbackFormLink');
+  const feedbackReviewLink = document.getElementById('feedbackReviewLink');
+
+  feedbackFormLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    chrome.tabs.create({
+      url: FEEDBACK_CONTENT.FORM_URL
+    });
+  });
+
+  feedbackReviewLink.addEventListener('click', function(e) {
     e.preventDefault();
     chrome.tabs.create({
       url: 'https://chrome.google.com/webstore/detail/mbifgfgfbnemojmfkckodkikibihcgaj/reviews'
@@ -146,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function showView(viewName) {
     settingsView.classList.add('hidden');
     infoView.classList.add('hidden');
-    creditsView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
 
     if (viewName === 'settings') {
       settingsView.classList.remove('hidden');
@@ -155,15 +164,15 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } else if (viewName === 'info') {
       infoView.classList.remove('hidden');
-    } else if (viewName === 'credits') {
-      creditsView.classList.remove('hidden');
+    } else if (viewName === 'feedback') {
+      feedbackView.classList.remove('hidden');
     }
   }
 
   function hideAllViews() {
     settingsView.classList.add('hidden');
     infoView.classList.add('hidden');
-    creditsView.classList.add('hidden');
+    feedbackView.classList.add('hidden');
   }
 
   async function loadTheme() {
@@ -573,7 +582,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function initializeTooltipContent() {
-    // About section content
     const aboutTitle = document.getElementById('aboutTitle');
     const aboutDescription = document.getElementById('aboutDescription');
     const howItWorksTitle = document.getElementById('howItWorksTitle');
@@ -583,14 +591,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const supportedSites = document.getElementById('supportedSites');
     const creditsTitle = document.getElementById('creditsTitle');
     const credits = document.getElementById('credits');
+    const changelogTitle = document.getElementById('changelogTitle');
+    const changelogContent = document.getElementById('changelogContent');
 
-    // API descriptions
     const tooltipFreeTier = document.getElementById('tooltipFreeTier');
     const tooltipFreeTierDesc = document.getElementById('tooltipFreeTierDesc');
     const tooltipYourApiKey = document.getElementById('tooltipYourApiKey');
     const tooltipYourApiKeyDesc = document.getElementById('tooltipYourApiKeyDesc');
 
-    // Populate About content
+    const feedbackTitle = document.getElementById('feedbackTitle');
+    const feedbackDescription = document.getElementById('feedbackDescription');
+    const feedbackFormText = document.getElementById('feedbackFormText');
+    const feedbackOrText = document.getElementById('feedbackOrText');
+    const feedbackReviewText = document.getElementById('feedbackReviewText');
+
     if (aboutTitle) {
       aboutTitle.textContent = ABOUT_CONTENT.TITLE;
     }
@@ -618,8 +632,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (credits) {
       credits.innerHTML = ABOUT_CONTENT.CREDITS;
     }
+    if (changelogTitle) {
+      changelogTitle.textContent = ABOUT_CONTENT.CHANGELOG_TITLE;
+    }
+    if (changelogContent) {
+      let changelogHtml = '';
+      for (const [version, data] of Object.entries(CHANGELOG)) {
+        changelogHtml += `<div class="changelog-version">`;
+        changelogHtml += `<h4>${data.title}</h4>`;
+        changelogHtml += `<ul>`;
+        data.changes.forEach(change => {
+          changelogHtml += `<li>${change}</li>`;
+        });
+        changelogHtml += `</ul></div>`;
+      }
+      changelogContent.innerHTML = changelogHtml;
+    }
 
-    // Populate API descriptions
     if (tooltipFreeTier) {
       tooltipFreeTier.textContent = API_DESCRIPTIONS.FREE_TIER_TITLE;
     }
@@ -631,6 +660,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (tooltipYourApiKeyDesc) {
       tooltipYourApiKeyDesc.innerHTML = API_DESCRIPTIONS.YOUR_API_KEY;
+    }
+
+    if (feedbackTitle) {
+      feedbackTitle.textContent = FEEDBACK_CONTENT.TITLE;
+    }
+    if (feedbackDescription) {
+      feedbackDescription.textContent = FEEDBACK_CONTENT.DESCRIPTION;
+    }
+    if (feedbackFormText) {
+      feedbackFormText.textContent = FEEDBACK_CONTENT.FORM_TEXT;
+    }
+    if (feedbackOrText) {
+      feedbackOrText.textContent = FEEDBACK_CONTENT.OR_TEXT;
+    }
+    if (feedbackReviewText) {
+      feedbackReviewText.textContent = FEEDBACK_CONTENT.REVIEW_TEXT;
     }
   }
 

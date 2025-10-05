@@ -615,6 +615,102 @@
         .info-content a:hover {
             text-decoration: underline;
         }
+
+        .changelog-summary {
+            color: #1f2937;
+        }
+
+        body.dark .changelog-summary {
+            color: #e5e7eb;
+        }
+
+        .feedback-link {
+            padding: 12px;
+            text-align: center;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: block;
+        }
+
+        .feedback-link-primary,
+        .feedback-link-secondary {
+            background: #f9fafb;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+        }
+
+        .feedback-link-primary:hover,
+        .feedback-link-secondary:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+
+        body.dark .feedback-link-primary,
+        body.dark .feedback-link-secondary {
+            background: #111827;
+            color: #e5e7eb;
+            border-color: #374151;
+        }
+
+        body.dark .feedback-link-primary:hover,
+        body.dark .feedback-link-secondary:hover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        body.dark #feedbackOrText {
+            color: #9ca3af;
+        }
+
+        .feedback-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ffffff;
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        body.dark .feedback-view {
+            background: #1f2937;
+        }
+
+        .changelog-version {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        body.dark .changelog-version {
+            background: #111827;
+            border-color: #374151;
+        }
+
+        .changelog-version h4 {
+            color: #3b82f6;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .changelog-version ul {
+            list-style: disc;
+            margin-left: 20px;
+            color: #4b5563;
+            font-size: 13px;
+        }
+
+        body.dark .changelog-version ul {
+            color: #9ca3af;
+        }
     </style>
 </head>
 <body>
@@ -650,9 +746,9 @@
             ⓘ
             <span class="tooltip">Info</span>
         </button>
-        <button class="bottom-icon" id="creditsIcon">
-            ★
-            <span class="tooltip">Credits</span>
+        <button class="bottom-icon" id="feedbackIcon">
+            ✉
+            <span class="tooltip">Feedback</span>
         </button>
     </div>
 
@@ -705,21 +801,40 @@
 
             <h3 id="supportedSitesTitle"></h3>
             <p id="supportedSites"></p>
-        </div>
-    </div>
 
-    <div class="credits-view hidden" id="creditsView">
-        <div class="view-header">
-            <button class="back-btn" id="creditsBackBtn">←</button>
-            <div class="view-title">Credits</div>
-        </div>
-        <div class="info-content">
             <h3 id="creditsTitle"></h3>
             <p id="credits"></p>
 
-            <p style="font-style: italic; margin-top: 20px;">
-                Enjoying the extension or have ideas for improvement? <a href="#" id="reviewLink">Leave a review!</a>
-            </p>
+            <details style="margin-top: 20px;">
+                <summary style="cursor: pointer; font-size: 16px; font-weight: 600; margin-bottom: 12px;" class="changelog-summary">
+                    <span id="changelogTitle">Changelog</span>
+                </summary>
+                <div id="changelogContent" style="margin-top: 12px;"></div>
+            </details>
+        </div>
+    </div>
+
+    <div class="feedback-view hidden" id="feedbackView">
+        <div class="view-header">
+            <button class="back-btn" id="feedbackBackBtn">←</button>
+            <div class="view-title" id="feedbackTitle">Feedback</div>
+        </div>
+        <div class="info-content">
+            <p id="feedbackDescription" style="margin-bottom: 20px;"></p>
+
+            <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 20px;">
+                <a href="#" id="feedbackReviewLink" class="feedback-link feedback-link-primary">
+                    ⭐ <span id="feedbackReviewText"></span>
+                </a>
+
+                <div style="text-align: center; color: #6b7280; font-size: 14px;">
+                    <span id="feedbackOrText"></span>
+                </div>
+
+                <a href="#" id="feedbackFormLink" class="feedback-link feedback-link-secondary">
+                    📝 <span id="feedbackFormText"></span>
+                </a>
+            </div>
         </div>
     </div>
 
