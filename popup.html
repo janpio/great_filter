@@ -720,6 +720,94 @@
         body.dark .changelog-version ul {
             color: #9ca3af;
         }
+
+        .checkbox-option {
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        body.dark .checkbox-option {
+            border-color: #374151;
+        }
+
+        .checkbox-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            position: relative;
+        }
+
+        .checkbox-option.disabled:hover::after {
+            content: attr(title);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-top: 8px;
+            pointer-events: none;
+        }
+
+        body.dark .checkbox-option.disabled:hover::after {
+            background: #374151;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-option.disabled .checkbox-container {
+            cursor: not-allowed;
+        }
+
+        .checkbox-input {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+
+        .checkbox-option.disabled .checkbox-input {
+            cursor: not-allowed;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            color: #1f2937;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        body.dark .checkbox-label {
+            color: #e5e7eb;
+        }
+
+        .checkbox-option.disabled .checkbox-label {
+            cursor: not-allowed;
+        }
+
+        .checkbox-description {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+            margin-left: 28px;
+            transition: color 0.2s ease;
+        }
+
+        body.dark .checkbox-description {
+            color: #9ca3af;
+        }
     </style>
 </head>
 <body>
@@ -788,6 +876,16 @@
         <div class="api-key-section hidden" id="apiKeySection">
             <div class="input-label">OpenRouter API Key</div>
             <input type="text" id="apiKey" class="api-key-input" placeholder="sk-or-...">
+        </div>
+        <div class="input-group">
+            <div class="section-title">Image Settings</div>
+            <div class="checkbox-option" id="imageSendingOption" title="">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="imageSendingToggle" class="checkbox-input">
+                    <span class="checkbox-label">Send images for analysis</span>
+                </label>
+                <div class="checkbox-description">Images help provide better filtering accuracy</div>
+            </div>
         </div>
     </div>
 

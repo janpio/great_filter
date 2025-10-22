@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const apiKeyInput = document.getElementById('apiKey');
   const apiDescription = document.getElementById('apiDescription');
 
+  const imageSendingToggle = document.getElementById('imageSendingToggle');
+  const imageSendingOption = document.getElementById('imageSendingOption');
+
   let isFiltering = false;
   let isOnSupportedSite = false;
   let isTopicsEditing = false;
@@ -38,6 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadSavedTopics();
   loadApiKeySettings();
+  loadImageSendingSettings();
   loadTheme();
   checkCurrentFilteringState();
   checkSupportedSite();
@@ -125,6 +129,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   apiKeyInput.addEventListener('input', function() {
     saveApiKeyImmediate();
+  });
+
+  imageSendingToggle.addEventListener('change', function() {
+    handleImageSendingChange();
   });
 
   const feedbackFormLink = document.getElementById('feedbackFormLink');
@@ -336,6 +344,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  async function loadImageSendingSettings() {
+    try {
+      const result = await chrome.storage.local.get(['sendImages']);
+      const sendImages = result.sendImages === true;
+
+      imageSendingToggle.checked = sendImages;
+      updateImageSendingState();
+    } catch (error) {
+      console.error('Error loading image sending settings:', error);
+    }
+  }
+
+  function updateImageSendingState() {
+    const useOwnApiKey = useOwnApiKeyRadio.checked;
+
+    if (useOwnApiKey) {
+      // Enable the toggle when using own API key
+      imageSendingToggle.disabled = false;
+      imageSendingOption.classList.remove('disabled');
+      imageSendingOption.title = '';
+    } else {
+      // Disable the toggle when using proxy API
+      imageSendingToggle.disabled = true;
+      imageSendingOption.classList.add('disabled');
+      imageSendingOption.title = 'Only available with your own API key';
+    }
+  }
+
+  async function handleImageSendingChange() {
+    try {
+      const sendImages = imageSendingToggle.checked;
+      await chrome.storage.local.set({ sendImages });
+      console.log('Image sending setting updated:', sendImages);
+    } catch (error) {
+      console.error('Error saving image sending setting:', error);
+    }
+  }
+
   async function checkCurrentFilteringState() {
     try {
       const result = await chrome.storage.local.get(['filteringEnabled', 'allowedTopics']);
@@ -478,6 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function handleApiChoiceChange() {
     updateApiKeyVisibility();
     updateApiDescription();
+    updateImageSendingState();
 
     if (useProxyApiRadio.checked) {
       console.log('🔄 Switched to free tier - checking usage...');
