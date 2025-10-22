@@ -55,6 +55,15 @@ class XContentFilter extends ContentFilterBase {
           }
         });
 
+        const imageUrls = [];
+        const imageElements = container.querySelectorAll('[data-testid="tweetPhoto"] img');
+        imageElements.forEach(img => {
+          const src = img.getAttribute('src');
+          if (src && src.startsWith('https://pbs.twimg.com/media/')) {
+            imageUrls.push(src);
+          }
+        });
+
         if (titleElement && title) {
 
           if (!this.processedItems.has(title)) {
@@ -62,7 +71,8 @@ class XContentFilter extends ContentFilterBase {
               title: title,
               container: container,
               titleElement: titleElement,
-              usedSelector: usedSelector
+              usedSelector: usedSelector,
+              imageUrls: imageUrls
             });
           }
         }
@@ -91,7 +101,8 @@ class XContentFilter extends ContentFilterBase {
         items: elements.map((element, index) => ({
           index: index + 1,
           title: element.title,
-          container: element.container
+          container: element.container,
+          imageUrls: element.imageUrls || []
         })),
         topics: topics
       });
