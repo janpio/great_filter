@@ -64,6 +64,14 @@ class XContentFilter extends ContentFilterBase {
           }
         });
 
+        const videoElements = container.querySelectorAll('[data-testid="videoPlayer"] video');
+        videoElements.forEach(video => {
+          const poster = video.getAttribute('poster');
+          if (poster && poster.startsWith('https://pbs.twimg.com/')) {
+            imageUrls.push(poster);
+          }
+        });
+
         if (titleElement && title) {
 
           if (!this.processedItems.has(title)) {
