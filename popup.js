@@ -233,8 +233,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         startFiltering();
 
-        await chrome.tabs.reload(tabs[0].id);
-
         showMessage('Filtering started!');
       }
     } catch (error) {
@@ -422,8 +420,6 @@ document.addEventListener('DOMContentLoaded', function() {
         chrome.runtime.sendMessage({
           action: 'filteringStopped'
         });
-
-        await chrome.tabs.reload(tabs[0].id);
       }
     } catch (error) {
       console.error('Error stopping filter:', error);
