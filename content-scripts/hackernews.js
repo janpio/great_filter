@@ -124,10 +124,15 @@ class HackerNewsContentFilter extends ContentFilterBase {
     }
   }
 
-  async processElementsBatch(elements, topics, elementType = 'story') {
-
+  async processElements(elements, topics = null) {
     try {
       if (elements.length === 0) {
+        return;
+      }
+
+      const topicsToUse = topics || this.currentTopics;
+      if (!topicsToUse) {
+        console.error('❌ Great Filter: No topics available for filtering');
         return;
       }
 
@@ -136,6 +141,7 @@ class HackerNewsContentFilter extends ContentFilterBase {
         this.blurWaitingElement(element);
       });
 
+      chrome.runtime.sendMessage({ action: 'contentProcessing' });
 
       const response = await chrome.runtime.sendMessage({
         action: 'checkItemTitlesBatch',
@@ -144,12 +150,20 @@ class HackerNewsContentFilter extends ContentFilterBase {
           title: element.title,
           container: element.container
         })),
-        topics: topics
+        topics: topicsToUse
       });
 
-
       if (response.error) {
-        console.error(`❌ Great Filter: Error checking ${elementType}s:`, response.error);
+        if (response.error === 'DAILY_LIMIT_EXCEEDED') {
+          console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
+          this.showDailyLimitMessage(response);
+          this.isFilteringActive = false;
+          chrome.runtime.sendMessage({ action: 'filteringStopped' });
+          chrome.runtime.sendMessage({ action: 'filteringComplete' });
+          return;
+        }
+        console.error('❌ Great Filter: Error checking items:', response.error);
+        chrome.runtime.sendMessage({ action: 'filteringComplete' });
         return;
       }
 
@@ -161,46 +175,24 @@ class HackerNewsContentFilter extends ContentFilterBase {
           this.blurBlockedElement(element);
         }
       });
+
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+
     } catch (error) {
-      console.error(`❌ Great Filter: Error in processElementsBatch for ${elementType}s:`, error);
-    }
-  }
-
-
-  async processItemsForFiltering(topics) {
-    const itemElements = this.extractItemElements();
-
-    if (itemElements.length > 0) {
-      chrome.runtime.sendMessage({
-        action: 'contentProcessing'
-      });
-
-      await this.processElementsBatch(itemElements, topics, 'item');
-
-      chrome.runtime.sendMessage({
-        action: 'filteringComplete'
-      });
+      console.error('❌ Great Filter: Error in processElements:', error);
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
     }
   }
 
   init() {
-    this.extractItemElements();
-
-    this.setupMessageListener(
-      (topics) => this.processItemsForFiltering(topics),
-      (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'item')
-    );
+    this.setupMessageListener();
 
     this.waitForElements(
       () => this.extractItemElements(),
       () => {
-        this.checkFilteringState(
-          (topics) => this.processItemsForFiltering(topics),
-          (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'item')
-        );
+        this.checkFilteringState();
       }
     );
-
   }
 }
 

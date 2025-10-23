@@ -106,10 +106,15 @@ class ContentFilterBase {
     container.title = `${TITLE_PREFIXES.ALLOWED} Element kept`;
   }
 
-  async processElementsBatch(elements, topics, elementType = 'item') {
-
+  async processElements(elements, topics = null) {
     try {
       if (elements.length === 0) {
+        return;
+      }
+
+      const topicsToUse = topics || this.currentTopics;
+      if (!topicsToUse) {
+        console.error('❌ Great Filter: No topics available for filtering');
         return;
       }
 
@@ -118,6 +123,7 @@ class ContentFilterBase {
         this.blurWaitingElement(element.container, element.title);
       });
 
+      chrome.runtime.sendMessage({ action: 'contentProcessing' });
 
       const response = await chrome.runtime.sendMessage({
         action: 'checkItemTitlesBatch',
@@ -126,9 +132,8 @@ class ContentFilterBase {
           title: element.title,
           container: element.container
         })),
-        topics: topics
+        topics: topicsToUse
       });
-
 
       if (response.error) {
         if (response.error === 'DAILY_LIMIT_EXCEEDED') {
@@ -136,9 +141,11 @@ class ContentFilterBase {
           this.showDailyLimitMessage(response);
           this.isFilteringActive = false;
           chrome.runtime.sendMessage({ action: 'filteringStopped' });
+          chrome.runtime.sendMessage({ action: 'filteringComplete' });
           return;
         }
-        console.error(`❌ Great Filter: Error checking ${elementType}s:`, response.error);
+        console.error('❌ Great Filter: Error checking items:', response.error);
+        chrome.runtime.sendMessage({ action: 'filteringComplete' });
         return;
       }
 
@@ -150,8 +157,12 @@ class ContentFilterBase {
           this.blurBlockedElement(element.container, element.title);
         }
       });
+
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+
     } catch (error) {
-      console.error(`❌ Great Filter: Error in processElementsBatch for ${elementType}s:`, error);
+      console.error('❌ Great Filter: Error in processElements:', error);
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
     }
   }
 
@@ -256,76 +267,15 @@ class ContentFilterBase {
   async pollForNewContent() {
     if (!this.currentTopics || !this.extractElementsFunction) return;
 
-
     const allElements = this.extractElementsFunction();
     const newElements = allElements.filter(element => !this.processedItems.has(element.title));
 
     if (newElements.length > 0) {
-      await this.processNewElements(newElements);
+      await this.processElements(newElements);
     }
   }
 
-  async processNewElements(newElements) {
-
-    try {
-      newElements.forEach(element => {
-        this.processedItems.add(element.title);
-        this.blurWaitingElement(element.container, element.title);
-      });
-
-      chrome.runtime.sendMessage({
-        action: 'contentProcessing'
-      });
-
-      const response = await chrome.runtime.sendMessage({
-        action: 'checkItemTitlesBatch',
-        items: newElements.map((element, index) => ({
-          index: index + 1,
-          title: element.title,
-          container: element.container
-        })),
-        topics: this.currentTopics
-      });
-
-
-      if (response.error) {
-        if (response.error === 'DAILY_LIMIT_EXCEEDED') {
-          console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
-          this.showDailyLimitMessage(response);
-          this.isFilteringActive = false;
-          chrome.runtime.sendMessage({ action: 'filteringStopped' });
-          return;
-        }
-        console.error('❌ Great Filter: Error checking polling elements:', response.error);
-        chrome.runtime.sendMessage({
-          action: 'filteringComplete'
-        });
-        return;
-      }
-
-      response.results.forEach((result, index) => {
-        const element = newElements[index];
-
-        if (result.isAllowed) {
-          this.unblurElement(element.container);
-        } else {
-          this.blurBlockedElement(element.container, element.title);
-        }
-      });
-
-      chrome.runtime.sendMessage({
-        action: 'filteringComplete'
-      });
-
-    } catch (error) {
-      console.error('❌ Great Filter: Error processing polling elements:', error);
-      chrome.runtime.sendMessage({
-        action: 'filteringComplete'
-      });
-    }
-  }
-
-  async checkFilteringState(processElementsFunction, startScrollMonitoringFunction) {
+  async checkFilteringState() {
     try {
       const result = await chrome.storage.local.get(['allowedTopics', 'filteringEnabled']);
       const topics = result.allowedTopics || [];
@@ -333,23 +283,31 @@ class ContentFilterBase {
 
       if (topics.length > 0 && filteringEnabled) {
         this.isFilteringActive = true;
-        processElementsFunction(topics);
-        startScrollMonitoringFunction(topics);
-      } else {
+        await this.processInitialElements(topics);
+        this.startScrollMonitoring(topics, () => this.extractItemElements());
       }
     } catch (error) {
       console.error('Error checking filtering state:', error);
     }
   }
 
-  setupMessageListener(processElementsFunction, startScrollMonitoringFunction) {
+  async processInitialElements(topics) {
+    const elements = this.extractItemElements();
+    if (elements.length > 0) {
+      await this.processElements(elements, topics);
+    }
+  }
+
+  setupMessageListener() {
     chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
       if (request.action === 'startFiltering') {
         this.isFilteringActive = true;
-        processElementsFunction(request.topics);
-        startScrollMonitoringFunction(request.topics);
-        sendResponse({ success: true });
+        this.processInitialElements(request.topics).then(() => {
+          this.startScrollMonitoring(request.topics, () => this.extractItemElements());
+          sendResponse({ success: true });
+        });
+        return true;
       }
 
       if (request.action === 'stopFiltering') {
@@ -372,7 +330,6 @@ class ContentFilterBase {
         });
         return true;
       }
-
 
       return true;
     });

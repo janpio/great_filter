@@ -14,11 +14,10 @@ class XContentFilter extends ContentFilterBase {
       'article[role="article"]'
     ];
 
-
-    containerSelectors.forEach((selector, index) => {
+    containerSelectors.forEach(selector => {
       const containers = document.querySelectorAll(selector);
 
-      containers.forEach((container, containerIndex) => {
+      containers.forEach(container => {
         if (processedContainers.has(container)) {
           return;
         }
@@ -56,13 +55,13 @@ class XContentFilter extends ContentFilterBase {
         });
 
         if (titleElement && title) {
-
           if (!this.processedItems.has(title)) {
             itemElements.push({
               title: title,
               container: container,
               titleElement: titleElement,
-              usedSelector: usedSelector
+              usedSelector: usedSelector,
+              imageUrls: []
             });
           }
         }
@@ -72,11 +71,40 @@ class XContentFilter extends ContentFilterBase {
     return itemElements;
   }
 
+  extractImageUrlsFromElements(elements) {
+    elements.forEach(element => {
+      const imageElements = element.container.querySelectorAll('[data-testid="tweetPhoto"] img');
+      for (const img of imageElements) {
+        const src = img.getAttribute('src');
+        if (src && src.startsWith('https://pbs.twimg.com/media/')) {
+          element.imageUrls = [src];
+          return;
+        }
+      }
 
-  async processElementsBatch(elements, topics, elementType = 'tweet') {
+      const videoElements = element.container.querySelectorAll('[data-testid="videoPlayer"] video');
+      for (const video of videoElements) {
+        const poster = video.getAttribute('poster');
+        if (poster && poster.startsWith('https://pbs.twimg.com/')) {
+          element.imageUrls = [poster];
+          return;
+        }
+      }
 
+      element.imageUrls = [];
+    });
+  }
+
+
+  async processElements(elements, topics = null) {
     try {
       if (elements.length === 0) {
+        return;
+      }
+
+      const topicsToUse = topics || this.currentTopics;
+      if (!topicsToUse) {
+        console.error('❌ Great Filter: No topics available for filtering');
         return;
       }
 
@@ -85,20 +113,34 @@ class XContentFilter extends ContentFilterBase {
         this.blurWaitingElement(element.container, element.title);
       });
 
+      chrome.runtime.sendMessage({ action: 'contentProcessing' });
+
+      await new Promise(resolve => setTimeout(resolve, CONFIG.MEDIA_LOAD_DELAY_MS));
+
+      this.extractImageUrlsFromElements(elements);
 
       const response = await chrome.runtime.sendMessage({
         action: 'checkItemTitlesBatch',
         items: elements.map((element, index) => ({
           index: index + 1,
           title: element.title,
-          container: element.container
+          container: element.container,
+          imageUrls: element.imageUrls || []
         })),
-        topics: topics
+        topics: topicsToUse
       });
 
-
       if (response.error) {
-        console.error(`❌ Great Filter: Error checking ${elementType}s:`, response.error);
+        if (response.error === 'DAILY_LIMIT_EXCEEDED') {
+          console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
+          this.showDailyLimitMessage(response);
+          this.isFilteringActive = false;
+          chrome.runtime.sendMessage({ action: 'filteringStopped' });
+          chrome.runtime.sendMessage({ action: 'filteringComplete' });
+          return;
+        }
+        console.error('❌ Great Filter: Error checking items:', response.error);
+        chrome.runtime.sendMessage({ action: 'filteringComplete' });
         return;
       }
 
@@ -110,53 +152,24 @@ class XContentFilter extends ContentFilterBase {
           this.blurBlockedElement(element.container, element.title);
         }
       });
+
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+
     } catch (error) {
-      console.error(`❌ Great Filter: Error in processElementsBatch for ${elementType}s:`, error);
-    }
-  }
-
-  async processItemsForFiltering(topics) {
-    const itemElements = this.extractItemElements();
-
-    if (itemElements.length > 0) {
-      chrome.runtime.sendMessage({
-        action: 'contentProcessing'
-      });
-
-      await this.processElementsBatch(itemElements, topics, 'tweet');
-
-      chrome.runtime.sendMessage({
-        action: 'filteringComplete'
-      });
+      console.error('❌ Great Filter: Error in processElements:', error);
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
     }
   }
 
   init() {
-    const initialTweets = this.extractItemElements();
-
-    this.setupMessageListener(
-      (topics) => {
-        return this.processItemsForFiltering(topics);
-      },
-      (topics) => {
-        return this.startScrollMonitoring(topics, () => this.extractItemElements(), 'tweet');
-      }
-    );
+    this.setupMessageListener();
 
     this.waitForElements(
       () => this.extractItemElements(),
       () => {
-        this.checkFilteringState(
-          (topics) => {
-            return this.processItemsForFiltering(topics);
-          },
-          (topics) => {
-            return this.startScrollMonitoring(topics, () => this.extractItemElements(), 'tweet');
-          }
-        );
+        this.checkFilteringState();
       }
     );
-
   }
 }
 

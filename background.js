@@ -195,7 +195,7 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
 
     const prompt = PromptTemplates.createBatchPrompt(items, topics);
 
-    console.log('Full prompt:\n', prompt);
+    console.log('Full prompt:\n', typeof prompt === 'string' ? prompt : JSON.stringify(prompt, null, 2));
 
     const requestBody = {
       model: apiConfig.model,
