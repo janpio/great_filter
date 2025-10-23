@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const apiKeySection = document.getElementById('apiKeySection');
   const apiKeyInput = document.getElementById('apiKey');
   const apiDescription = document.getElementById('apiDescription');
+  const modelSelect = document.getElementById('modelSelect');
+  const modelDescription = document.getElementById('modelDescription');
 
   let isFiltering = false;
   let isOnSupportedSite = false;
@@ -38,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadSavedTopics();
   loadApiKeySettings();
+  loadModelSettings();
   loadTheme();
   checkCurrentFilteringState();
   checkSupportedSite();
@@ -125,6 +128,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   apiKeyInput.addEventListener('input', function() {
     saveApiKeyImmediate();
+  });
+
+  modelSelect.addEventListener('change', function() {
+    handleModelChange();
   });
 
   const feedbackFormLink = document.getElementById('feedbackFormLink');
@@ -471,9 +478,60 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  async function loadModelSettings() {
+    try {
+      modelSelect.innerHTML = '';
+
+      CONFIG.AVAILABLE_MODELS.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        modelSelect.appendChild(option);
+      });
+
+      const result = await chrome.storage.local.get(['selectedModel', 'useOwnApiKey']);
+      const selectedModel = result.selectedModel || CONFIG.MODEL;
+      const useOwnApiKey = result.useOwnApiKey === true;
+
+      modelSelect.value = selectedModel;
+      modelSelect.disabled = !useOwnApiKey;
+
+      if (!useOwnApiKey) {
+        modelDescription.textContent = 'Model selection is available when using your own API key.';
+      } else {
+        modelDescription.textContent = 'Select a model for content filtering.';
+      }
+    } catch (error) {
+      console.error('Error loading model settings:', error);
+    }
+  }
+
+  function handleModelChange() {
+    const selectedModel = modelSelect.value;
+    chrome.storage.local.set({
+      selectedModel: selectedModel
+    }).then(() => {
+      console.log('Model updated:', selectedModel);
+    }).catch(error => {
+      console.error('Error updating model:', error);
+    });
+  }
+
+  function updateModelSelectState() {
+    const useOwnApiKey = useOwnApiKeyRadio.checked;
+    modelSelect.disabled = !useOwnApiKey;
+
+    if (!useOwnApiKey) {
+      modelDescription.textContent = 'Model selection is available when using your own API key.';
+    } else {
+      modelDescription.textContent = 'Select a model for content filtering.';
+    }
+  }
+
   function handleApiChoiceChange() {
     updateApiKeyVisibility();
     updateApiDescription();
+    updateModelSelectState();
 
     if (useProxyApiRadio.checked) {
       console.log('🔄 Switched to free tier - checking usage...');
