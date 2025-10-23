@@ -115,7 +115,7 @@ class XContentFilter extends ContentFilterBase {
 
       chrome.runtime.sendMessage({ action: 'contentProcessing' });
 
-      await new Promise(resolve => setTimeout(resolve, CONFIG.X_MEDIA_LOAD_DELAY_MS));
+      await new Promise(resolve => setTimeout(resolve, CONFIG.MEDIA_LOAD_DELAY_MS));
 
       this.extractImageUrlsFromElements(elements);
 
