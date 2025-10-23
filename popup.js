@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const modelSelect = document.getElementById('modelSelect');
   const modelDescription = document.getElementById('modelDescription');
 
+  const imageSendingToggle = document.getElementById('imageSendingToggle');
+  const imageSendingOption = document.getElementById('imageSendingOption');
+
   let isFiltering = false;
   let isOnSupportedSite = false;
   let isTopicsEditing = false;
@@ -41,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
   loadSavedTopics();
   loadApiKeySettings();
   loadModelSettings();
+  loadImageSendingSettings();
   loadTheme();
   checkCurrentFilteringState();
   checkSupportedSite();
@@ -132,6 +136,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   modelSelect.addEventListener('change', function() {
     handleModelChange();
+  });
+
+  imageSendingToggle.addEventListener('change', function() {
+    handleImageSendingChange();
   });
 
   const feedbackFormLink = document.getElementById('feedbackFormLink');
@@ -341,6 +349,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  async function loadImageSendingSettings() {
+    try {
+      const result = await chrome.storage.local.get(['sendImages']);
+      const sendImages = result.sendImages === true;
+
+      imageSendingToggle.checked = sendImages;
+      updateImageSendingState();
+    } catch (error) {
+      console.error('Error loading image sending settings:', error);
+    }
+  }
+
+  function updateImageSendingState() {
+    const useOwnApiKey = useOwnApiKeyRadio.checked;
+
+    if (useOwnApiKey) {
+      // Enable the toggle when using own API key
+      imageSendingToggle.disabled = false;
+      imageSendingOption.classList.remove('disabled');
+      imageSendingOption.title = '';
+    } else {
+      // Disable the toggle when using proxy API
+      imageSendingToggle.disabled = true;
+      imageSendingOption.classList.add('disabled');
+      imageSendingOption.title = 'Only available with your own API key';
+    }
+  }
+
+  async function handleImageSendingChange() {
+    try {
+      const sendImages = imageSendingToggle.checked;
+      await chrome.storage.local.set({ sendImages });
+      console.log('Image sending setting updated:', sendImages);
+    } catch (error) {
+      console.error('Error saving image sending setting:', error);
+    }
+  }
+
   async function checkCurrentFilteringState() {
     try {
       const result = await chrome.storage.local.get(['filteringEnabled', 'allowedTopics']);
@@ -519,12 +565,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateModelSelectState() {
     const useOwnApiKey = useOwnApiKeyRadio.checked;
+    const modelSection = document.getElementById('modelSection');
+
     modelSelect.disabled = !useOwnApiKey;
 
     if (!useOwnApiKey) {
-      modelDescription.textContent = 'Model selection is available when using your own API key.';
+      modelSection.classList.add('disabled');
+      modelSection.title = 'Only available with your own API key';
     } else {
-      modelDescription.textContent = 'Select a model for content filtering.';
+      modelSection.classList.remove('disabled');
+      modelSection.title = '';
     }
   }
 
@@ -532,6 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateApiKeyVisibility();
     updateApiDescription();
     updateModelSelectState();
+    updateImageSendingState();
 
     if (useProxyApiRadio.checked) {
       console.log('🔄 Switched to free tier - checking usage...');
