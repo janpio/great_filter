@@ -61,40 +61,15 @@ class RedditContentFilter extends ContentFilterBase {
     return itemElements;
   }
 
-  async processItemsForFiltering(topics) {
-    const itemElements = this.extractItemElements();
-
-    if (itemElements.length > 0) {
-      chrome.runtime.sendMessage({
-        action: 'contentProcessing'
-      });
-
-      await this.processElementsBatch(itemElements, topics, 'post');
-
-      chrome.runtime.sendMessage({
-        action: 'filteringComplete'
-      });
-    }
-  }
-
   init() {
-    this.extractItemElements();
-
-    this.setupMessageListener(
-      (topics) => this.processItemsForFiltering(topics),
-      (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'post')
-    );
+    this.setupMessageListener();
 
     this.waitForElements(
       () => this.extractItemElements(),
       () => {
-        this.checkFilteringState(
-          (topics) => this.processItemsForFiltering(topics),
-          (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'post')
-        );
+        this.checkFilteringState();
       }
     );
-
   }
 }
 
