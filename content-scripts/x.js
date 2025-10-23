@@ -14,11 +14,10 @@ class XContentFilter extends ContentFilterBase {
       'article[role="article"]'
     ];
 
-
-    containerSelectors.forEach((selector, index) => {
+    containerSelectors.forEach(selector => {
       const containers = document.querySelectorAll(selector);
 
-      containers.forEach((container, containerIndex) => {
+      containers.forEach(container => {
         if (processedContainers.has(container)) {
           return;
         }
@@ -55,32 +54,14 @@ class XContentFilter extends ContentFilterBase {
           }
         });
 
-        const imageUrls = [];
-        const imageElements = container.querySelectorAll('[data-testid="tweetPhoto"] img');
-        imageElements.forEach(img => {
-          const src = img.getAttribute('src');
-          if (src && src.startsWith('https://pbs.twimg.com/media/')) {
-            imageUrls.push(src);
-          }
-        });
-
-        const videoElements = container.querySelectorAll('[data-testid="videoPlayer"] video');
-        videoElements.forEach(video => {
-          const poster = video.getAttribute('poster');
-          if (poster && poster.startsWith('https://pbs.twimg.com/')) {
-            imageUrls.push(poster);
-          }
-        });
-
         if (titleElement && title) {
-
           if (!this.processedItems.has(title)) {
             itemElements.push({
               title: title,
               container: container,
               titleElement: titleElement,
               usedSelector: usedSelector,
-              imageUrls: imageUrls
+              imageUrls: []
             });
           }
         }
@@ -88,6 +69,30 @@ class XContentFilter extends ContentFilterBase {
     });
 
     return itemElements;
+  }
+
+  extractImageUrlsFromElements(elements) {
+    elements.forEach(element => {
+      const imageElements = element.container.querySelectorAll('[data-testid="tweetPhoto"] img');
+      for (const img of imageElements) {
+        const src = img.getAttribute('src');
+        if (src && src.startsWith('https://pbs.twimg.com/media/')) {
+          element.imageUrls = [src];
+          return;
+        }
+      }
+
+      const videoElements = element.container.querySelectorAll('[data-testid="videoPlayer"] video');
+      for (const video of videoElements) {
+        const poster = video.getAttribute('poster');
+        if (poster && poster.startsWith('https://pbs.twimg.com/')) {
+          element.imageUrls = [poster];
+          return;
+        }
+      }
+
+      element.imageUrls = [];
+    });
   }
 
 
@@ -109,6 +114,10 @@ class XContentFilter extends ContentFilterBase {
       });
 
       chrome.runtime.sendMessage({ action: 'contentProcessing' });
+
+      await new Promise(resolve => setTimeout(resolve, CONFIG.X_MEDIA_LOAD_DELAY_MS));
+
+      this.extractImageUrlsFromElements(elements);
 
       const response = await chrome.runtime.sendMessage({
         action: 'checkItemTitlesBatch',
