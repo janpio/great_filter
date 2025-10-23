@@ -63,6 +63,12 @@ const CHANGELOG = {
   }
 };
 
+const TITLE_PREFIXES = {
+  PROCESSING: 'Processing:',
+  BLOCKED: 'Blocked:',
+  ALLOWED: 'Allowed:',
+};
+
 class ContentFilterBase {
   constructor() {
     this.processedItems = new Set();
@@ -82,7 +88,7 @@ class ContentFilterBase {
       container.classList.remove('gf-blocked', 'gf-allowed');
       container.classList.add('gf-waiting');
       container.setAttribute('data-gf-state', 'waiting');
-      container.title = `Processing: ${title}`;
+      container.title = `${TITLE_PREFIXES.PROCESSING} ${title}`;
     }
   }
 
@@ -90,14 +96,14 @@ class ContentFilterBase {
     container.classList.remove('gf-waiting', 'gf-allowed');
     container.classList.add('gf-blocked');
     container.setAttribute('data-gf-state', 'blocked');
-    container.title = `Blocked: ${title}`;
+    container.title = `${TITLE_PREFIXES.BLOCKED} ${title}`;
   }
 
   unblurElement(container) {
     container.classList.remove('gf-waiting', 'gf-blocked');
     container.classList.add('gf-allowed');
     container.setAttribute('data-gf-state', 'allowed');
-    container.title = 'Allowed: Element kept';
+    container.title = `${TITLE_PREFIXES.ALLOWED} Element kept`;
   }
 
   async processElementsBatch(elements, topics, elementType = 'item') {
@@ -192,7 +198,7 @@ class ContentFilterBase {
       element.removeAttribute('data-gf-state');
       // Only remove our custom titles
       const title = element.getAttribute('title');
-      if (title && (title.startsWith('Processing:') || title.startsWith('Blocked:') || title.startsWith('Allowed:'))) {
+      if (title && (title.startsWith(TITLE_PREFIXES.PROCESSING) || title.startsWith(TITLE_PREFIXES.BLOCKED) || title.startsWith(TITLE_PREFIXES.ALLOWED))) {
         element.removeAttribute('title');
       }
     });
