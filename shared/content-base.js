@@ -184,6 +184,21 @@ class ContentFilterBase {
   stopFiltering() {
     this.isFilteringActive = false;
     this.stopScrollMonitoring();
+
+    // Remove all filter classes and attributes from filtered content
+    const filteredElements = document.querySelectorAll('[data-gf-state]');
+    filteredElements.forEach(element => {
+      element.classList.remove('gf-waiting', 'gf-blocked', 'gf-allowed');
+      element.removeAttribute('data-gf-state');
+      // Only remove our custom titles
+      const title = element.getAttribute('title');
+      if (title && (title.startsWith('Processing:') || title.startsWith('Blocked:') || title.startsWith('Allowed:'))) {
+        element.removeAttribute('title');
+      }
+    });
+
+    // Clear processed items so they can be reprocessed if filtering is turned back on
+    this.processedItems.clear();
   }
 
   waitForElements(extractElementsFunction, callback, maxAttempts = POLLING_INTERVALS.STARTUP_MAX_ATTEMPTS, interval = POLLING_INTERVALS.STARTUP_ELEMENT_CHECK) {
