@@ -565,6 +565,55 @@
             color: #6b7280;
         }
 
+        .model-section {
+            margin-top: 16px;
+        }
+
+        .model-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            background: #ffffff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+
+        .model-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .model-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f3f4f6;
+        }
+
+        body.dark .model-select {
+            background: #111827;
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+
+        body.dark .model-select:disabled {
+            background: #1f2937;
+        }
+
+        .model-description {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        body.dark .model-description {
+            color: #9ca3af;
+        }
+
         .info-content h3 {
             color: #1f2937;
             font-size: 16px;
@@ -788,6 +837,14 @@
         <div class="api-key-section hidden" id="apiKeySection">
             <div class="input-label">OpenRouter API Key</div>
             <input type="text" id="apiKey" class="api-key-input" placeholder="sk-or-...">
+        </div>
+        <div class="model-section" id="modelSection">
+            <div class="input-label">Model</div>
+            <select id="modelSelect" class="model-select">
+            </select>
+            <div class="model-description" id="modelDescription">
+                Model selection is available when using your own API key.
+            </div>
         </div>
     </div>
 
