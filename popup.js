@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const apiKeySection = document.getElementById('apiKeySection');
   const apiKeyInput = document.getElementById('apiKey');
   const apiDescription = document.getElementById('apiDescription');
+  const modelSelect = document.getElementById('modelSelect');
+  const modelDescription = document.getElementById('modelDescription');
 
   const imageSendingToggle = document.getElementById('imageSendingToggle');
   const imageSendingOption = document.getElementById('imageSendingOption');
@@ -41,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadSavedTopics();
   loadApiKeySettings();
+  loadModelSettings();
   loadImageSendingSettings();
   loadTheme();
   checkCurrentFilteringState();
@@ -129,6 +132,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   apiKeyInput.addEventListener('input', function() {
     saveApiKeyImmediate();
+  });
+
+  modelSelect.addEventListener('change', function() {
+    handleModelChange();
   });
 
   imageSendingToggle.addEventListener('change', function() {
@@ -240,8 +247,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         startFiltering();
-
-        await chrome.tabs.reload(tabs[0].id);
 
         showMessage('Filtering started!');
       }
@@ -468,8 +473,6 @@ document.addEventListener('DOMContentLoaded', function() {
         chrome.runtime.sendMessage({
           action: 'filteringStopped'
         });
-
-        await chrome.tabs.reload(tabs[0].id);
       }
     } catch (error) {
       console.error('Error stopping filter:', error);
@@ -521,9 +524,64 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  async function loadModelSettings() {
+    try {
+      modelSelect.innerHTML = '';
+
+      CONFIG.AVAILABLE_MODELS.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        modelSelect.appendChild(option);
+      });
+
+      const result = await chrome.storage.local.get(['selectedModel', 'useOwnApiKey']);
+      const selectedModel = result.selectedModel || CONFIG.MODEL;
+      const useOwnApiKey = result.useOwnApiKey === true;
+
+      modelSelect.value = selectedModel;
+      modelSelect.disabled = !useOwnApiKey;
+
+      if (!useOwnApiKey) {
+        modelDescription.textContent = 'Model selection is available when using your own API key.';
+      } else {
+        modelDescription.textContent = 'Select a model for content filtering.';
+      }
+    } catch (error) {
+      console.error('Error loading model settings:', error);
+    }
+  }
+
+  function handleModelChange() {
+    const selectedModel = modelSelect.value;
+    chrome.storage.local.set({
+      selectedModel: selectedModel
+    }).then(() => {
+      console.log('Model updated:', selectedModel);
+    }).catch(error => {
+      console.error('Error updating model:', error);
+    });
+  }
+
+  function updateModelSelectState() {
+    const useOwnApiKey = useOwnApiKeyRadio.checked;
+    const modelSection = document.getElementById('modelSection');
+
+    modelSelect.disabled = !useOwnApiKey;
+
+    if (!useOwnApiKey) {
+      modelSection.classList.add('disabled');
+      modelSection.title = 'Only available with your own API key';
+    } else {
+      modelSection.classList.remove('disabled');
+      modelSection.title = '';
+    }
+  }
+
   function handleApiChoiceChange() {
     updateApiKeyVisibility();
     updateApiDescription();
+    updateModelSelectState();
     updateImageSendingState();
 
     if (useProxyApiRadio.checked) {

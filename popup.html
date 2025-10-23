@@ -565,6 +565,93 @@
             color: #6b7280;
         }
 
+        .model-section {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        body.dark .model-section {
+            border-color: #374151;
+        }
+
+        .model-section.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            position: relative;
+        }
+
+        .model-section.disabled:hover::after {
+            content: attr(title);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-top: 8px;
+            pointer-events: none;
+        }
+
+        body.dark .model-section.disabled:hover::after {
+            background: #374151;
+        }
+
+        .model-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            background: #ffffff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+
+        .model-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .model-select:disabled {
+            cursor: not-allowed;
+            background: #f3f4f6;
+        }
+
+        body.dark .model-select {
+            background: #111827;
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+
+        body.dark .model-select:disabled {
+            background: #1f2937;
+        }
+
+        .model-description {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        body.dark .model-description {
+            color: #9ca3af;
+        }
+
+        .model-section.disabled .model-description {
+            display: none;
+        }
+
         .info-content h3 {
             color: #1f2937;
             font-size: 16px;
@@ -877,8 +964,15 @@
             <div class="input-label">OpenRouter API Key</div>
             <input type="text" id="apiKey" class="api-key-input" placeholder="sk-or-...">
         </div>
+        <div class="model-section" id="modelSection" title="">
+            <div class="input-label">Model</div>
+            <select id="modelSelect" class="model-select">
+            </select>
+            <div class="model-description" id="modelDescription">
+                Select a model for content filtering.
+            </div>
+        </div>
         <div class="input-group">
-            <div class="section-title">Image Settings</div>
             <div class="checkbox-option" id="imageSendingOption" title="">
                 <label class="checkbox-container">
                     <input type="checkbox" id="imageSendingToggle" class="checkbox-input">

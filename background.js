@@ -35,13 +35,15 @@ initializeGlobalApiCounter();
 
 async function getApiConfiguration() {
   try {
-    const result = await chrome.storage.local.get(['useOwnApiKey', 'apiKey']);
+    const result = await chrome.storage.local.get(['useOwnApiKey', 'apiKey', 'selectedModel']);
     const useOwnApiKey = result.useOwnApiKey === true;
     const apiKey = result.apiKey || '';
+    const model = result.selectedModel || CONFIG.MODEL;
 
     return {
       useOwnApiKey,
       apiKey,
+      model,
       url: useOwnApiKey ? CONFIG.OPENROUTER_API_URL : CONFIG.PROXY_URL,
       headers: useOwnApiKey ? {
         'Content-Type': 'application/json',
@@ -57,6 +59,7 @@ async function getApiConfiguration() {
     return {
       useOwnApiKey: false,
       apiKey: '',
+      model: CONFIG.MODEL,
       url: CONFIG.PROXY_URL,
       headers: { 'Content-Type': 'application/json' }
     };
@@ -195,7 +198,7 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
     console.log('Full prompt:\n', prompt);
 
     const requestBody = {
-      model: CONFIG.MODEL,
+      model: apiConfig.model,
       messages: [
         {
           role: 'user',
@@ -325,7 +328,7 @@ async function handleRecommendedFilter(items, sendResponse) {
     console.log('Recommendation prompt:\n', prompt);
 
     const requestBody = {
-      model: CONFIG.MODEL,
+      model: apiConfig.model,
       messages: [
         {
           role: 'user',
