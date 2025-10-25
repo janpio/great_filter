@@ -106,6 +106,20 @@ class ContentFilterBase {
     container.title = `${TITLE_PREFIXES.ALLOWED} Element kept`;
   }
 
+  unhideAll() {
+    const allFilteredElements = document.querySelectorAll('[data-gf-state]');
+    allFilteredElements.forEach(element => {
+      element.classList.remove('gf-waiting', 'gf-blocked', 'gf-allowed');
+      element.removeAttribute('data-gf-state');
+      const title = element.getAttribute('title');
+      if (title && (title.startsWith(TITLE_PREFIXES.PROCESSING) || title.startsWith(TITLE_PREFIXES.BLOCKED) || title.startsWith(TITLE_PREFIXES.ALLOWED))) {
+        element.removeAttribute('title');
+      }
+    });
+
+    this.processedItems.clear();
+  }
+
   async processElements(elements, topics = null) {
     try {
       if (elements.length === 0) {
@@ -313,6 +327,20 @@ class ContentFilterBase {
       if (request.action === 'stopFiltering') {
         this.stopFiltering();
         sendResponse({ success: true });
+      }
+
+      if (request.action === 'updatePreferences') {
+        this.unhideAll();
+
+        this.stopScrollMonitoring();
+
+        this.currentTopics = request.topics;
+
+        this.processInitialElements(request.topics).then(() => {
+          this.startScrollMonitoring(request.topics, () => this.extractItemElements());
+          sendResponse({ success: true });
+        });
+        return true;
       }
 
       if (request.action === 'getFilteringState') {
