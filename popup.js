@@ -360,8 +360,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function loadImageSendingSettings() {
     try {
-      const result = await chrome.storage.local.get(['sendImages']);
-      const sendImages = result.sendImages === true;
+      const result = await chrome.storage.local.get(['sendImages', 'useOwnApiKey']);
+      const useOwnApiKey = result.useOwnApiKey === true;
+
+      let sendImages = result.sendImages;
+      if (sendImages === undefined) {
+        sendImages = false;
+        await chrome.storage.local.set({ sendImages: false });
+      } else {
+        sendImages = sendImages === true;
+      }
 
       imageSendingToggle.checked = sendImages;
       updateImageSendingState();
@@ -587,7 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function handleApiChoiceChange() {
+  async function handleApiChoiceChange() {
     updateApiKeyVisibility();
     updateApiDescription();
     updateModelSelectState();
@@ -596,6 +604,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (useProxyApiRadio.checked) {
       console.log('🔄 Switched to free tier - checking usage...');
       checkUsageAvailability();
+
+      imageSendingToggle.checked = false;
+      modelSelect.value = CONFIG.MODEL;
+      await chrome.storage.local.set({
+        sendImages: false,
+        selectedModel: CONFIG.MODEL
+      });
+      console.log('Image sending disabled and model reset to default due to free tier selection');
     }
 
     chrome.storage.local.set({
@@ -799,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (changelogContent) {
       let changelogHtml = '';
-      for (const [version, data] of Object.entries(CHANGELOG)) {
+      for (const [_version, data] of Object.entries(CHANGELOG)) {
         changelogHtml += `<div class="changelog-version">`;
         changelogHtml += `<h4>${data.title}</h4>`;
         changelogHtml += `<ul>`;

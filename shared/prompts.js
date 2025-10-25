@@ -1,7 +1,7 @@
 class PromptTemplates {
-  static createBatchPrompt(items, topics) {
+  static createBatchPrompt(items, topics, sendImages = false) {
     const topicsString = topics.join(', ');
-    const hasImages = items.some(item => item.imageUrls && item.imageUrls.length > 0);
+    const hasImages = sendImages && items.some(item => item.imageUrls && item.imageUrls.length > 0);
 
     if (hasImages) {
       return this.createVisionBatchPrompt(items, topics);

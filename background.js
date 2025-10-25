@@ -193,7 +193,10 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
       throw new Error('No preferences configured');
     }
 
-    const prompt = PromptTemplates.createBatchPrompt(items, topics);
+    const settingsResult = await chrome.storage.local.get(['sendImages']);
+    const sendImages = settingsResult.sendImages === true;
+
+    const prompt = PromptTemplates.createBatchPrompt(items, topics, sendImages);
 
     console.log('Full prompt:\n', typeof prompt === 'string' ? prompt : JSON.stringify(prompt, null, 2));
 

@@ -8,8 +8,5 @@ const CONFIG = {
   AVAILABLE_MODELS: [
     "google/gemini-2.5-flash-lite",
     "google/gemini-2.5-flash",
-    "google/gemma-3-4b-it",
-    "google/gemma-3-12-it",
-    "google/gemma-3-27-it"
   ],
 };
