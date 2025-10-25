@@ -28,14 +28,24 @@ class XContentFilter extends ContentFilterBase {
 
         if (titleElement) {
           title = titleElement.textContent?.trim();
+        } else {
+          const videoElement = container.querySelector('[data-testid="videoPlayer"] video[aria-label]');
+          if (videoElement) {
+            title = videoElement.getAttribute('aria-label')?.trim();
+          } else {
+            const imageElement = container.querySelector('[data-testid="tweetPhoto"][aria-label]');
+            if (imageElement) {
+              title = imageElement.getAttribute('aria-label')?.trim();
+            }
+          }
         }
 
-        if (titleElement && title) {
+        if (title) {
           if (!this.processedItems.has(title)) {
             itemElements.push({
               title: title,
               container: container,
-              titleElement: titleElement,
+              titleElement: titleElement || container,
               imageUrls: []
             });
           }
