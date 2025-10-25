@@ -4,6 +4,28 @@ class XContentFilter extends ContentFilterBase {
     super();
   }
 
+  extractMediaDescriptions(container) {
+    const mediaParts = [];
+
+    const videoElement = container.querySelector('[data-testid="videoPlayer"] video[aria-label]');
+    if (videoElement) {
+      const videoLabel = videoElement.getAttribute('aria-label')?.trim();
+      if (videoLabel) {
+        mediaParts.push(`Video: ${videoLabel}`);
+      }
+    }
+
+    const imageElement = container.querySelector('[data-testid="tweetPhoto"][aria-label]');
+    if (imageElement) {
+      const imageLabel = imageElement.getAttribute('aria-label')?.trim();
+      if (imageLabel) {
+        mediaParts.push(`Image: ${imageLabel}`);
+      }
+    }
+
+    return mediaParts;
+  }
+
   extractItemElements() {
     const itemElements = [];
     const processedContainers = new Set();
@@ -24,20 +46,22 @@ class XContentFilter extends ContentFilterBase {
         processedContainers.add(container);
 
         const titleElement = container.querySelector('[data-testid="tweetText"]');
-        let title = null;
+        let text = null;
 
         if (titleElement) {
-          title = titleElement.textContent?.trim();
-        } else {
-          const videoElement = container.querySelector('[data-testid="videoPlayer"] video[aria-label]');
-          if (videoElement) {
-            title = videoElement.getAttribute('aria-label')?.trim();
-          } else {
-            const imageElement = container.querySelector('[data-testid="tweetPhoto"][aria-label]');
-            if (imageElement) {
-              title = imageElement.getAttribute('aria-label')?.trim();
-            }
+          text = titleElement.textContent?.trim();
+        }
+
+        const mediaParts = this.extractMediaDescriptions(container);
+
+        let title = null;
+        if (text) {
+          title = text;
+          if (mediaParts.length > 0) {
+            title += '\nMedia: ' + mediaParts.join(', ');
           }
+        } else if (mediaParts.length > 0) {
+          title = 'Media: ' + mediaParts.join(', ');
         }
 
         if (title) {
