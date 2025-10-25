@@ -904,6 +904,21 @@
             color: #9ca3af;
         }
 
+        .version-number {
+            position: fixed;
+            bottom: 20px;
+            right: 12px;
+            font-size: 11px;
+            color: #9ca3af;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        body.dark .version-number {
+            color: #6b7280;
+        }
+
         .settings-group {
             background: #f5fbfd;
             border: 1px solid #c0dfe8;
@@ -1124,6 +1139,8 @@
             <span class="tooltip">Feedback</span>
         </button>
     </div>
+
+    <div class="version-number" id="versionNumber"></div>
 
     <div class="settings-view hidden" id="settingsView">
         <div class="view-header">

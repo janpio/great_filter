@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
   checkCurrentFilteringState();
   checkSupportedSite();
   initializeTooltipContent();
+  displayVersion();
 
   let originalTopics = '';
   let currentTopicsArray = [];
@@ -745,6 +746,13 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('❌ Error checking usage availability:', error);
       usageInfo = null;
       updateApiDescription();
+    }
+  }
+
+  function displayVersion() {
+    const versionNumber = document.getElementById('versionNumber');
+    if (versionNumber) {
+      versionNumber.textContent = `v${CONFIG.VERSION}`;
     }
   }
 
