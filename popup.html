@@ -13,7 +13,7 @@
         body {
             width: 350px;
             min-height: 400px;
-            background: #ffffff;
+            background: #f7f5ed;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             color: #1f2937;
             font-size: 14px;
@@ -44,7 +44,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f3f4f6;
+            background: #ebe7d9;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -55,7 +55,7 @@
         }
 
         .theme-toggle:hover {
-            background: #e5e7eb;
+            background: #ddd7c4;
             color: #3b82f6;
         }
 
@@ -75,8 +75,8 @@
             left: 0;
             right: 0;
             height: 60px;
-            background: #f9fafb;
-            border-top: 1px solid #e5e7eb;
+            background: #eeebde;
+            border-top: 1px solid #ddd7c4;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -105,7 +105,7 @@
         }
 
         .bottom-icon:hover {
-            background: #e5e7eb;
+            background: #ddd7c4;
             color: #3b82f6;
         }
 
@@ -208,9 +208,9 @@
             align-items: center;
             justify-content: space-between;
             padding: 12px 14px;
-            background: #ffffff;
+            background: #fffef9;
             border-radius: 6px;
-            border: 1px solid #d1d5db;
+            border: 1px solid #ddd7c4;
             transition: all 0.2s ease;
         }
 
@@ -368,10 +368,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: #ffffff;
+            background: #f7f5ed;
             z-index: 1000;
             padding: 20px;
             overflow-y: auto;
+            overflow-x: visible;
             transition: background-color 0.2s ease;
         }
 
@@ -400,7 +401,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f3f4f6;
+            background: #ebe7d9;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -411,7 +412,7 @@
         }
 
         .back-btn:hover {
-            background: #e5e7eb;
+            background: #ddd7c4;
             color: #3b82f6;
         }
 
@@ -846,6 +847,13 @@
             background: #374151;
         }
 
+        .checkbox-with-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
         .checkbox-container {
             display: flex;
             align-items: center;
@@ -894,6 +902,184 @@
 
         body.dark .checkbox-description {
             color: #9ca3af;
+        }
+
+        .settings-group {
+            background: #fffef9;
+            border: 1px solid #ddd7c4;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+        }
+
+        body.dark .settings-group {
+            background: #111827;
+            border-color: #374151;
+        }
+
+        .settings-group.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .settings-group.disabled .info-icon {
+            pointer-events: auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .settings-group.disabled::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(247, 245, 237, 0.5);
+            border-radius: 8px;
+            z-index: 1;
+        }
+
+        body.dark .settings-group.disabled::before {
+            background: rgba(17, 24, 39, 0.5);
+        }
+
+        .setting-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .setting-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            transition: color 0.2s ease;
+        }
+
+        body.dark .setting-title {
+            color: #e5e7eb;
+        }
+
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            font-size: 16px;
+            cursor: help;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+            position: relative;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .info-icon:hover {
+            color: #3b82f6;
+        }
+
+        .info-icon::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            right: 0;
+            background: rgba(31, 41, 55, 0.98);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 400;
+            white-space: normal;
+            width: 220px;
+            text-align: left;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 10000;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-icon:hover::after {
+            opacity: 1;
+        }
+
+        body.dark .info-icon::after {
+            background: rgba(55, 65, 81, 0.98);
+        }
+
+        .setting-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .setting-description {
+            font-size: 12px;
+            color: #6b7280;
+            padding: 10px;
+            background: #f7f5ed;
+            border-radius: 6px;
+            line-height: 1.5;
+            white-space: pre-line;
+            transition: all 0.2s ease;
+        }
+
+        body.dark .setting-description {
+            color: #9ca3af;
+            background: #0d1117;
+        }
+
+        .setting-input,
+        .setting-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd7c4;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            background: #fffef9;
+            color: #1f2937;
+        }
+
+        .setting-input {
+            font-family: monospace;
+        }
+
+        .setting-select {
+            cursor: pointer;
+        }
+
+        .setting-input:focus,
+        .setting-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .setting-input:disabled,
+        .setting-select:disabled {
+            cursor: not-allowed;
+            background: #f3f4f6;
+        }
+
+        body.dark .setting-input,
+        body.dark .setting-select {
+            background: #0d1117;
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+
+        body.dark .setting-input:disabled,
+        body.dark .setting-select:disabled {
+            background: #1f2937;
         }
     </style>
 </head>
@@ -944,41 +1130,59 @@
             <button class="back-btn" id="settingsBackBtn">←</button>
             <div class="view-title">Settings</div>
         </div>
-        <div class="input-group">
-            <div class="section-title">API Configuration</div>
-            <div class="radio-group">
-                <div class="radio-option">
-                    <input type="radio" id="useProxyApi" name="apiChoice" class="radio-input" value="proxy" checked>
-                    <label for="useProxyApi" class="radio-label">Free (Limited)</label>
+
+        <div class="settings-group">
+            <div class="setting-header">
+                <div class="setting-title">API Configuration</div>
+                <button class="info-icon" data-tooltip="Choose between free shared API or your own OpenRouter API key for unlimited usage">ⓘ</button>
+            </div>
+            <div class="setting-content">
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="useProxyApi" name="apiChoice" class="radio-input" value="proxy" checked>
+                        <label for="useProxyApi" class="radio-label">Free (Limited)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="useOwnApiKey" name="apiChoice" class="radio-input" value="own">
+                        <label for="useOwnApiKey" class="radio-label">Your API Key</label>
+                    </div>
                 </div>
-                <div class="radio-option">
-                    <input type="radio" id="useOwnApiKey" name="apiChoice" class="radio-input" value="own">
-                    <label for="useOwnApiKey" class="radio-label">Your API Key</label>
+                <div class="setting-description" id="apiDescription">
+                    No API key required. Daily usage limits apply. Perfect for trying out the extension.
                 </div>
             </div>
-            <div class="api-description" id="apiDescription">
-                No API key required. Daily usage limits apply. Perfect for trying out the extension.
+        </div>
+
+        <div class="settings-group hidden" id="apiKeySection">
+            <div class="setting-header">
+                <div class="setting-title">OpenRouter API Key</div>
+                <button class="info-icon" data-tooltip="Get your API key from openrouter.ai. Only visible to you and stored locally.">ⓘ</button>
+            </div>
+            <div class="setting-content">
+                <input type="text" id="apiKey" class="setting-input" placeholder="sk-or-...">
             </div>
         </div>
-        <div class="api-key-section hidden" id="apiKeySection">
-            <div class="input-label">OpenRouter API Key</div>
-            <input type="text" id="apiKey" class="api-key-input" placeholder="sk-or-...">
-        </div>
-        <div class="model-section" id="modelSection" title="">
-            <div class="input-label">Model</div>
-            <select id="modelSelect" class="model-select">
-            </select>
-            <div class="model-description" id="modelDescription">
-                Select a model for content filtering.
+
+        <div class="settings-group" id="modelSection">
+            <div class="setting-header">
+                <div class="setting-title">Model</div>
+                <button class="info-icon" data-tooltip="Select a model which filters the content. Available only when using own API key.">ⓘ</button>
+            </div>
+            <div class="setting-content">
+                <select id="modelSelect" class="setting-select">
+                </select>
             </div>
         </div>
-        <div class="input-group">
-            <div class="checkbox-option" id="imageSendingOption" title="">
-                <label class="checkbox-container">
-                    <input type="checkbox" id="imageSendingToggle" class="checkbox-input">
-                    <span class="checkbox-label">Send images for analysis</span>
-                </label>
-                <div class="checkbox-description">Images help provide better filtering accuracy</div>
+
+        <div class="settings-group" id="imageSendingOption">
+            <div class="setting-content">
+                <div class="checkbox-with-info">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="imageSendingToggle" class="checkbox-input">
+                        <span class="checkbox-label">Include images</span>
+                    </label>
+                    <button class="info-icon" data-tooltip="Includes images and video thumbnails with posts for better filtering accuracy. Available only when using own API key.">ⓘ</button>
+                </div>
             </div>
         </div>
     </div>

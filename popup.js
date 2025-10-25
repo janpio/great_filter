@@ -31,7 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const apiKeyInput = document.getElementById('apiKey');
   const apiDescription = document.getElementById('apiDescription');
   const modelSelect = document.getElementById('modelSelect');
-  const modelDescription = document.getElementById('modelDescription');
 
   const imageSendingToggle = document.getElementById('imageSendingToggle');
   const imageSendingOption = document.getElementById('imageSendingOption');
@@ -382,15 +381,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const useOwnApiKey = useOwnApiKeyRadio.checked;
 
     if (useOwnApiKey) {
-      // Enable the toggle when using own API key
       imageSendingToggle.disabled = false;
       imageSendingOption.classList.remove('disabled');
-      imageSendingOption.title = '';
     } else {
-      // Disable the toggle when using proxy API
       imageSendingToggle.disabled = true;
       imageSendingOption.classList.add('disabled');
-      imageSendingOption.title = 'Only available with your own API key';
     }
   }
 
@@ -559,11 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
       modelSelect.value = selectedModel;
       modelSelect.disabled = !useOwnApiKey;
 
-      if (!useOwnApiKey) {
-        modelDescription.textContent = 'Model selection is available when using your own API key.';
-      } else {
-        modelDescription.textContent = 'Select a model for content filtering.';
-      }
+      updateModelSelectState();
     } catch (error) {
       console.error('Error loading model settings:', error);
     }
@@ -588,10 +579,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!useOwnApiKey) {
       modelSection.classList.add('disabled');
-      modelSection.title = 'Only available with your own API key';
     } else {
       modelSection.classList.remove('disabled');
-      modelSection.title = '';
     }
   }
 
