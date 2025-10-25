@@ -317,6 +317,7 @@ class ContentFilterBase {
 
       if (request.action === 'startFiltering') {
         this.isFilteringActive = true;
+        this.processedItems.clear();
         this.processInitialElements(request.topics).then(() => {
           this.startScrollMonitoring(request.topics, () => this.extractItemElements());
           sendResponse({ success: true });

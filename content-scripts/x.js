@@ -23,36 +23,12 @@ class XContentFilter extends ContentFilterBase {
         }
         processedContainers.add(container);
 
-        const titleSelectors = [
-          '[data-testid="tweetText"]',
-          'div[data-testid="tweetText"]',
-          '[data-testid="card.wrapper"] [role="link"]',
-          '[data-testid="card.wrapper"] span',
-          'span[dir="ltr"]',
-          '.css-146c3p1 span',
-          'div[dir="auto"] span'
-        ];
-
-        let titleElement = null;
-        let usedSelector = null;
+        const titleElement = container.querySelector('[data-testid="tweetText"]');
         let title = null;
 
-        titleSelectors.forEach(titleSelector => {
-          if (!titleElement) {
-            const elements = container.querySelectorAll(titleSelector);
-            if (elements.length > 0) {
-              elements.forEach(el => {
-                const text = el.textContent?.trim();
-                if (text && text.length > 10 && !text.includes('·') && !text.includes('@') && !text.includes('replies') && !text.includes('reposts')) {
-                  titleElement = el;
-                  title = text;
-                  usedSelector = titleSelector;
-                  return;
-                }
-              });
-            }
-          }
-        });
+        if (titleElement) {
+          title = titleElement.textContent?.trim();
+        }
 
         if (titleElement && title) {
           if (!this.processedItems.has(title)) {
@@ -60,13 +36,15 @@ class XContentFilter extends ContentFilterBase {
               title: title,
               container: container,
               titleElement: titleElement,
-              usedSelector: usedSelector,
               imageUrls: []
             });
           }
         }
       });
     });
+
+    console.log(`🔍 Great Filter: Extracted ${itemElements.length} new items. Total processed: ${this.processedItems.size}`);
+    console.log('📋 Processed items:', Array.from(this.processedItems));
 
     return itemElements;
   }
