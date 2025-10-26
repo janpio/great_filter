@@ -5,6 +5,7 @@ const CONFIG = {
   MODEL: "google/gemma-3-4b-it",
   MAX_TOKENS: 2000,
   MAX_RECOMMENDATION_ITEMS: 25,
+  MAX_ITEMS_PER_BATCH: 25,
   MEDIA_LOAD_DELAY_MS: 500,
   AVAILABLE_MODELS: [
     "google/gemma-3-4b-it",
