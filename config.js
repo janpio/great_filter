@@ -9,6 +9,7 @@ const CONFIG = {
   MEDIA_LOAD_DELAY_MS: 500,
   AVAILABLE_MODELS: [
     "google/gemma-3-4b-it",
+    "google/gemma-3-12b-it",
     "google/gemini-2.5-flash-lite",
     "google/gemini-2.5-flash",
   ],
