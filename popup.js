@@ -234,25 +234,28 @@ document.addEventListener('DOMContentLoaded', function() {
         filteringEnabled: true
       });
 
+      startFiltering();
+
       const tabs = await chrome.tabs.query({active: true, currentWindow: true});
       if (tabs[0]) {
-        await chrome.tabs.sendMessage(tabs[0].id, {
+        chrome.tabs.sendMessage(tabs[0].id, {
           action: 'startFiltering',
           topics: topics
+        }).catch(error => {
+          console.error('Error starting filter:', error);
+          showMessage('Error starting filter. Make sure you are on a supported website.', true);
+          stopFiltering();
         });
 
         chrome.runtime.sendMessage({
           action: 'filteringStarted',
           topics: topics
         });
-
-        startFiltering();
-
-        showMessage('Filtering started!');
       }
     } catch (error) {
       console.error('Error starting filter:', error);
       showMessage('Error starting filter. Make sure you are on a supported website.', true);
+      stopFiltering();
     }
   }
 
