@@ -14,12 +14,9 @@ cd great_filter
 # Load unpacked extension from chrome://extensions/
 ```
 
-See [CLAUDE.md](CLAUDE.md) for architecture documentation.
-
 ## Privacy
 
 See [PRIVACY.md](PRIVACY.md) for privacy policy.
 
 ## License
-
-GPL-3.0 - see [LICENSE](LICENSE) for details.
+GPL-3.0 - see [LICENSE](LICENSE.md) for details.
