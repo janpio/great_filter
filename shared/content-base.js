@@ -198,7 +198,7 @@ class ContentFilterBase {
   }
 
 
-  startScrollMonitoring(topics, extractElementsFunction, elementType = 'item') {
+  startScrollMonitoring(topics, extractElementsFunction) {
     this.currentTopics = topics;
     this.extractElementsFunction = extractElementsFunction;
 
@@ -310,9 +310,17 @@ class ContentFilterBase {
     if (rerenderedElements.length > 0) {
       rerenderedElements.forEach(element => {
         if (this.blockedItems.has(element.title)) {
-          this.blurBlockedElement(element.container, element.title);
+          if (element.itemElements) {
+            this.blurBlockedElement(element);
+          } else {
+            this.blurBlockedElement(element.container, element.title);
+          }
         } else {
-          this.unblurElement(element.container);
+          if (element.itemElements) {
+            this.unblurElement(element);
+          } else {
+            this.unblurElement(element.container);
+          }
         }
       });
     }
