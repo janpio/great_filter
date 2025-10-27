@@ -44,16 +44,13 @@ class RedditContentFilter extends ContentFilterBase {
           let title = titleElement.textContent?.trim() || titleElement.innerText?.trim();
 
           if (title && title.length > 5) {
-
-            if (!this.processedItems.has(title)) {
-              itemElements.push({
-                title: title,
-                container: container,
-                titleElement: titleElement,
-                usedSelector: usedSelector,
-                imageUrls: []
-              });
-            }
+            itemElements.push({
+              title: title,
+              container: container,
+              titleElement: titleElement,
+              usedSelector: usedSelector,
+              imageUrls: []
+            });
           }
         }
       });
@@ -127,39 +124,54 @@ class RedditContentFilter extends ContentFilterBase {
 
       this.extractImageUrlsFromElements(elements);
 
-      const response = await chrome.runtime.sendMessage({
-        action: 'checkItemTitlesBatch',
-        items: elements.map((element, index) => ({
-          index: index + 1,
-          title: element.title,
-          container: element.container,
-          imageUrls: element.imageUrls || []
-        })),
-        topics: topicsToUse
-      });
-
-      if (response.error) {
-        if (response.error === 'DAILY_LIMIT_EXCEEDED') {
-          console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
-          this.showDailyLimitMessage(response);
-          this.isFilteringActive = false;
-          chrome.runtime.sendMessage({ action: 'filteringStopped' });
-          chrome.runtime.sendMessage({ action: 'filteringComplete' });
-          return;
-        }
-        console.error('❌ Great Filter: Error checking items:', response.error);
-        chrome.runtime.sendMessage({ action: 'filteringComplete' });
-        return;
+      const batches = [];
+      for (let i = 0; i < elements.length; i += CONFIG.MAX_ITEMS_PER_BATCH) {
+        batches.push(elements.slice(i, i + CONFIG.MAX_ITEMS_PER_BATCH));
       }
 
-      response.results.forEach((result, index) => {
-        const element = elements[index];
-        if (result.isAllowed) {
-          this.unblurElement(element.container);
-        } else {
-          this.blurBlockedElement(element.container, element.title);
+      const batchPromises = batches.map(async (batch, batchIndex) => {
+        try {
+          const response = await chrome.runtime.sendMessage({
+            action: 'checkItemTitlesBatch',
+            items: batch.map((element, index) => ({
+              index: index + 1,
+              title: element.title,
+              container: element.container,
+              imageUrls: element.imageUrls || []
+            })),
+            topics: topicsToUse
+          });
+
+          if (response.error) {
+            if (response.error === 'DAILY_LIMIT_EXCEEDED') {
+              console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
+              this.showDailyLimitMessage(response);
+              this.isFilteringActive = false;
+              chrome.runtime.sendMessage({ action: 'filteringStopped' });
+              return { error: response.error };
+            }
+            console.error('❌ Great Filter: Error checking items in batch:', response.error);
+            return { error: response.error };
+          }
+
+          response.results.forEach((result, index) => {
+            const element = batch[index];
+            if (result.isAllowed) {
+              this.unblurElement(element.container);
+            } else {
+              this.blurBlockedElement(element.container, element.title);
+              this.blockedItems.add(element.title);
+            }
+          });
+
+          return { success: true };
+        } catch (error) {
+          console.error(`❌ Great Filter: Error processing batch ${batchIndex}:`, error);
+          return { error: error.message };
         }
       });
+
+      await Promise.all(batchPromises);
 
       chrome.runtime.sendMessage({ action: 'filteringComplete' });
 

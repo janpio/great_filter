@@ -65,7 +65,7 @@ class YouTubeContentFilter extends ContentFilterBase {
                      titleElement.getAttribute('alt')?.trim();
 
 
-          if (title && !this.processedItems.has(title)) {
+          if (title) {
             itemElements.push({
               title: title,
               container: container,
