@@ -756,6 +756,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const versionNumber = document.getElementById('versionNumber');
     if (versionNumber) {
       versionNumber.textContent = `v${CONFIG.VERSION}`;
+      versionNumber.addEventListener('click', function(e) {
+        e.preventDefault();
+        chrome.tabs.create({ url: ABOUT_CONTENT.CHANGELOG_URL });
+      });
     }
   }
 
@@ -767,10 +771,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const apiTiersTitle = document.getElementById('apiTiersTitle');
     const supportedSitesTitle = document.getElementById('supportedSitesTitle');
     const supportedSites = document.getElementById('supportedSites');
-    const creditsTitle = document.getElementById('creditsTitle');
-    const credits = document.getElementById('credits');
-    const changelogTitle = document.getElementById('changelogTitle');
-    const changelogContent = document.getElementById('changelogContent');
 
     const tooltipFreeTier = document.getElementById('tooltipFreeTier');
     const tooltipFreeTierDesc = document.getElementById('tooltipFreeTierDesc');
@@ -787,7 +787,7 @@ document.addEventListener('DOMContentLoaded', function() {
       aboutTitle.textContent = ABOUT_CONTENT.TITLE;
     }
     if (aboutDescription) {
-      aboutDescription.textContent = ABOUT_CONTENT.DESCRIPTION;
+      aboutDescription.innerHTML = ABOUT_CONTENT.DESCRIPTION;
     }
     if (howItWorksTitle) {
       howItWorksTitle.textContent = ABOUT_CONTENT.HOW_IT_WORKS_TITLE;
@@ -803,28 +803,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (supportedSites) {
       supportedSites.textContent = ABOUT_CONTENT.SUPPORTED_SITES;
-    }
-    if (creditsTitle) {
-      creditsTitle.textContent = ABOUT_CONTENT.CREDITS_TITLE;
-    }
-    if (credits) {
-      credits.innerHTML = ABOUT_CONTENT.CREDITS;
-    }
-    if (changelogTitle) {
-      changelogTitle.textContent = ABOUT_CONTENT.CHANGELOG_TITLE;
-    }
-    if (changelogContent) {
-      let changelogHtml = '';
-      for (const [_version, data] of Object.entries(CHANGELOG)) {
-        changelogHtml += `<div class="changelog-version">`;
-        changelogHtml += `<h4>${data.title}</h4>`;
-        changelogHtml += `<ul>`;
-        data.changes.forEach(change => {
-          changelogHtml += `<li>${change}</li>`;
-        });
-        changelogHtml += `</ul></div>`;
-      }
-      changelogContent.innerHTML = changelogHtml;
     }
 
     if (tooltipFreeTier) {

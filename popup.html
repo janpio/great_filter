@@ -725,13 +725,6 @@
             text-decoration: underline;
         }
 
-        .changelog-summary {
-            color: #1f2937;
-        }
-
-        body.dark .changelog-summary {
-            color: #e5e7eb;
-        }
 
         .feedback-link {
             padding: 12px;
@@ -790,36 +783,6 @@
             background: #1f2937;
         }
 
-        .changelog-version {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 12px;
-        }
-
-        body.dark .changelog-version {
-            background: #111827;
-            border-color: #374151;
-        }
-
-        .changelog-version h4 {
-            color: #3b82f6;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .changelog-version ul {
-            list-style: disc;
-            margin-left: 20px;
-            color: #4b5563;
-            font-size: 13px;
-        }
-
-        body.dark .changelog-version ul {
-            color: #9ca3af;
-        }
 
         .checkbox-option {
             padding: 12px;
@@ -924,11 +887,22 @@
             color: #9ca3af;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             z-index: 50;
-            pointer-events: none;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            text-decoration: none;
+        }
+
+        .version-number:hover {
+            color: #3b82f6;
+            text-decoration: underline;
         }
 
         body.dark .version-number {
             color: #6b7280;
+        }
+
+        body.dark .version-number:hover {
+            color: #3b82f6;
         }
 
         .settings-group {
@@ -1152,7 +1126,7 @@
         </button>
     </div>
 
-    <div class="version-number" id="versionNumber"></div>
+    <a href="#" class="version-number" id="versionNumber" title="View releases"></a>
 
     <div class="settings-view hidden" id="settingsView">
         <div class="view-header">
@@ -1238,16 +1212,6 @@
 
             <h3 id="supportedSitesTitle"></h3>
             <p id="supportedSites"></p>
-
-            <h3 id="creditsTitle"></h3>
-            <p id="credits"></p>
-
-            <details style="margin-top: 20px;">
-                <summary style="cursor: pointer; font-size: 16px; font-weight: 600; margin-bottom: 12px;" class="changelog-summary">
-                    <span id="changelogTitle">Changelog</span>
-                </summary>
-                <div id="changelogContent" style="margin-top: 12px;"></div>
-            </details>
         </div>
     </div>
 

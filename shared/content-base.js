@@ -22,15 +22,13 @@ const UI_TIMEOUTS = {
 
 const ABOUT_CONTENT = {
   TITLE: 'About',
-  DESCRIPTION: 'AI-powered content filtering for social media platforms. ',
+  DESCRIPTION: 'AI-powered content filtering for social media platforms. <a href="https://github.com/jac08h/great_filter" target="_blank" style="color: #3b82f6; text-decoration: underline;">View on GitHub</a>.',
   HOW_IT_WORKS_TITLE: 'How It Works',
   HOW_IT_WORKS: 'The extension extracts visible content of individual posts from web pages and sends it to an LLM along with your topic preferences. The LLM decides whether each piece of content should be displayed. Only content approved by the LLM remains visible.',
   API_TIERS_TITLE: 'API Tiers',
   SUPPORTED_SITES_TITLE: 'Supported Sites',
   SUPPORTED_SITES: 'YouTube, Hacker News, Reddit, and X',
-  CREDITS_TITLE: 'Credits',
-  CREDITS: '<a href="https://jakubhalmes.com/" target="_blank" style="color: #3b82f6; text-decoration: underline;">Jakub Halmeš</a> & Claude via <a href="https://www.anthropic.com/claude-code" target="_blank" style="color: #3b82f6; text-decoration: underline;">Claude Code</a>',
-  CHANGELOG_TITLE: 'Changelog'
+  CHANGELOG_URL: 'https://github.com/jac08h/great_filter/releases'
 };
 
 const API_DESCRIPTIONS = {
@@ -49,19 +47,6 @@ const FEEDBACK_CONTENT = {
   FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLScGn0NmNMZYvo-kDZK5JzdELkQhcS7N16TJUoqN6psUxpfZBA/viewform?usp=header'
 };
 
-const CHANGELOG = {
-  '1.1.0': {
-    title: 'Version 1.1.0',
-    changes: [
-      'UI redesign with light/dark theme support',
-      'Add AI filtering recommendations',
-      'Switch model to google/gemini-2.5-flash-lite-preview-09-2025',
-      'Update filtering prompt',
-      'Update polling intervals',
-      'Add feedback form',
-    ]
-  }
-};
 
 const TITLE_PREFIXES = {
   PROCESSING: 'Processing:',
