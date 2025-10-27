@@ -442,10 +442,6 @@ class ContentFilterBase {
 
   async getRecommendedFilter() {
     try {
-      if (this.isFilteringActive) {
-        return { error: 'AI recommendations are only available when filtering is disabled' };
-      }
-
       if (typeof this.extractItemElements !== 'function') {
         console.error('❌ extractItemElements method not available');
         return {};
