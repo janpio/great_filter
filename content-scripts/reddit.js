@@ -44,15 +44,13 @@ class RedditContentFilter extends ContentFilterBase {
           let title = titleElement.textContent?.trim() || titleElement.innerText?.trim();
 
           if (title && title.length > 5) {
-
-            if (!this.processedItems.has(title)) {
-              itemElements.push({
-                title: title,
-                container: container,
-                titleElement: titleElement,
-                usedSelector: usedSelector
-              });
-            }
+            itemElements.push({
+              title: title,
+              container: container,
+              titleElement: titleElement,
+              usedSelector: usedSelector,
+              imageUrls: []
+            });
           }
         }
       });
@@ -61,40 +59,137 @@ class RedditContentFilter extends ContentFilterBase {
     return itemElements;
   }
 
-  async processItemsForFiltering(topics) {
-    const itemElements = this.extractItemElements();
+  extractImageUrlsFromElements(elements) {
+    elements.forEach(element => {
+      const postType = element.container.getAttribute('post-type');
 
-    if (itemElements.length > 0) {
-      chrome.runtime.sendMessage({
-        action: 'contentProcessing'
+      if (postType === 'video') {
+        const videoPlayer = element.container.querySelector('shreddit-player-2[poster]');
+        if (videoPlayer) {
+          const poster = videoPlayer.getAttribute('poster');
+          if (poster) {
+            element.imageUrls = [poster];
+            return;
+          }
+        }
+      } else if (postType === 'image') {
+        const imgElement = element.container.querySelector('img.preview-img, img.i18n-post-media-img');
+        if (imgElement) {
+          const src = imgElement.getAttribute('src');
+          if (src && (src.startsWith('https://preview.redd.it/') || src.startsWith('https://i.redd.it/'))) {
+            element.imageUrls = [src];
+            return;
+          }
+        }
+      } else if (postType === 'gallery') {
+        const galleryImages = element.container.querySelectorAll('gallery-carousel img.media-lightbox-img');
+        const imageUrls = [];
+        for (const img of galleryImages) {
+          const src = img.getAttribute('src');
+          if (src && (src.startsWith('https://preview.redd.it/') || src.startsWith('https://i.redd.it/'))) {
+            imageUrls.push(src);
+            if (imageUrls.length >= 3) break;
+          }
+        }
+        if (imageUrls.length > 0) {
+          element.imageUrls = imageUrls;
+          return;
+        }
+      }
+
+      element.imageUrls = [];
+    });
+  }
+
+  async processElements(elements, topics = null) {
+    try {
+      if (elements.length === 0) {
+        return;
+      }
+
+      const topicsToUse = topics || this.currentTopics;
+      if (!topicsToUse) {
+        console.error('❌ Great Filter: No topics available for filtering');
+        return;
+      }
+
+      elements.forEach(element => {
+        this.processedItems.add(element.title);
+        this.blurWaitingElement(element.container, element.title);
       });
 
-      await this.processElementsBatch(itemElements, topics, 'post');
+      chrome.runtime.sendMessage({ action: 'contentProcessing' });
 
-      chrome.runtime.sendMessage({
-        action: 'filteringComplete'
+      await new Promise(resolve => setTimeout(resolve, CONFIG.MEDIA_LOAD_DELAY_MS));
+
+      this.extractImageUrlsFromElements(elements);
+
+      const batches = [];
+      for (let i = 0; i < elements.length; i += CONFIG.MAX_ITEMS_PER_BATCH) {
+        batches.push(elements.slice(i, i + CONFIG.MAX_ITEMS_PER_BATCH));
+      }
+
+      const batchPromises = batches.map(async (batch, batchIndex) => {
+        try {
+          const response = await chrome.runtime.sendMessage({
+            action: 'checkItemTitlesBatch',
+            items: batch.map((element, index) => ({
+              index: index + 1,
+              title: element.title,
+              container: element.container,
+              imageUrls: element.imageUrls || []
+            })),
+            topics: topicsToUse
+          });
+
+          if (response.error) {
+            if (response.error === 'DAILY_LIMIT_EXCEEDED') {
+              console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
+              this.showDailyLimitMessage(response);
+              this.isFilteringActive = false;
+              chrome.runtime.sendMessage({ action: 'filteringStopped' });
+              return { error: response.error };
+            }
+            console.error('❌ Great Filter: Error checking items in batch:', response.error);
+            return { error: response.error };
+          }
+
+          response.results.forEach((result, index) => {
+            const element = batch[index];
+            if (result.isAllowed) {
+              this.unblurElement(element.container);
+            } else {
+              this.blurBlockedElement(element.container, element.title);
+              this.blockedItems.add(element.title);
+            }
+          });
+
+          return { success: true };
+        } catch (error) {
+          console.error(`❌ Great Filter: Error processing batch ${batchIndex}:`, error);
+          return { error: error.message };
+        }
       });
+
+      await Promise.all(batchPromises);
+
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+
+    } catch (error) {
+      console.error('❌ Great Filter: Error in processElements:', error);
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
     }
   }
 
   init() {
-    this.extractItemElements();
-
-    this.setupMessageListener(
-      (topics) => this.processItemsForFiltering(topics),
-      (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'post')
-    );
+    this.setupMessageListener();
 
     this.waitForElements(
       () => this.extractItemElements(),
       () => {
-        this.checkFilteringState(
-          (topics) => this.processItemsForFiltering(topics),
-          (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'post')
-        );
+        this.checkFilteringState();
       }
     );
-
   }
 }
 

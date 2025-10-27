@@ -48,18 +48,15 @@ class HackerNewsContentFilter extends ContentFilterBase {
           let title = titleElement.textContent?.trim() || titleElement.innerText?.trim();
 
           if (title && title.length > 5) {
+            const relatedElements = this.getStoryElements(container);
 
-            if (!this.processedItems.has(title)) {
-              const relatedElements = this.getStoryElements(container);
-
-              itemElements.push({
-                title: title,
-                container: container,
-                itemElements: relatedElements,
-                titleElement: titleElement,
-                usedSelector: usedSelector
-              });
-            }
+            itemElements.push({
+              title: title,
+              container: container,
+              itemElements: relatedElements,
+              titleElement: titleElement,
+              usedSelector: usedSelector
+            });
           }
         }
       });
@@ -124,10 +121,15 @@ class HackerNewsContentFilter extends ContentFilterBase {
     }
   }
 
-  async processElementsBatch(elements, topics, elementType = 'story') {
-
+  async processElements(elements, topics = null) {
     try {
       if (elements.length === 0) {
+        return;
+      }
+
+      const topicsToUse = topics || this.currentTopics;
+      if (!topicsToUse) {
+        console.error('❌ Great Filter: No topics available for filtering');
         return;
       }
 
@@ -136,71 +138,73 @@ class HackerNewsContentFilter extends ContentFilterBase {
         this.blurWaitingElement(element);
       });
 
+      chrome.runtime.sendMessage({ action: 'contentProcessing' });
 
-      const response = await chrome.runtime.sendMessage({
-        action: 'checkItemTitlesBatch',
-        items: elements.map((element, index) => ({
-          index: index + 1,
-          title: element.title,
-          container: element.container
-        })),
-        topics: topics
-      });
-
-
-      if (response.error) {
-        console.error(`❌ Great Filter: Error checking ${elementType}s:`, response.error);
-        return;
+      const batches = [];
+      for (let i = 0; i < elements.length; i += CONFIG.MAX_ITEMS_PER_BATCH) {
+        batches.push(elements.slice(i, i + CONFIG.MAX_ITEMS_PER_BATCH));
       }
 
-      response.results.forEach((result, index) => {
-        const element = elements[index];
-        if (result.isAllowed) {
-          this.unblurElement(element);
-        } else {
-          this.blurBlockedElement(element);
+      const batchPromises = batches.map(async (batch, batchIndex) => {
+        try {
+          const response = await chrome.runtime.sendMessage({
+            action: 'checkItemTitlesBatch',
+            items: batch.map((element, index) => ({
+              index: index + 1,
+              title: element.title,
+              container: element.container
+            })),
+            topics: topicsToUse
+          });
+
+          if (response.error) {
+            if (response.error === 'DAILY_LIMIT_EXCEEDED') {
+              console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
+              this.showDailyLimitMessage(response);
+              this.isFilteringActive = false;
+              chrome.runtime.sendMessage({ action: 'filteringStopped' });
+              return { error: response.error };
+            }
+            console.error('❌ Great Filter: Error checking items in batch:', response.error);
+            return { error: response.error };
+          }
+
+          response.results.forEach((result, index) => {
+            const element = batch[index];
+            if (result.isAllowed) {
+              this.unblurElement(element);
+            } else {
+              this.blurBlockedElement(element);
+              this.blockedItems.add(element.title);
+            }
+          });
+
+          return { success: true };
+        } catch (error) {
+          console.error(`❌ Great Filter: Error processing batch ${batchIndex}:`, error);
+          return { error: error.message };
         }
       });
+
+      await Promise.all(batchPromises);
+
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+
     } catch (error) {
-      console.error(`❌ Great Filter: Error in processElementsBatch for ${elementType}s:`, error);
-    }
-  }
-
-
-  async processItemsForFiltering(topics) {
-    const itemElements = this.extractItemElements();
-
-    if (itemElements.length > 0) {
-      chrome.runtime.sendMessage({
-        action: 'contentProcessing'
-      });
-
-      await this.processElementsBatch(itemElements, topics, 'item');
-
-      chrome.runtime.sendMessage({
-        action: 'filteringComplete'
-      });
+      console.error('❌ Great Filter: Error in processElements:', error);
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
     }
   }
 
   init() {
-    this.extractItemElements();
-
-    this.setupMessageListener(
-      (topics) => this.processItemsForFiltering(topics),
-      (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'item')
-    );
+    this.setupMessageListener();
 
     this.waitForElements(
       () => this.extractItemElements(),
       () => {
-        this.checkFilteringState(
-          (topics) => this.processItemsForFiltering(topics),
-          (topics) => this.startScrollMonitoring(topics, () => this.extractItemElements(), 'item')
-        );
+        this.checkFilteringState();
       }
     );
-
   }
 }
 

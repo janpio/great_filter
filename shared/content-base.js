@@ -22,15 +22,13 @@ const UI_TIMEOUTS = {
 
 const ABOUT_CONTENT = {
   TITLE: 'About',
-  DESCRIPTION: 'AI-powered content filtering for social media platforms. ',
+  DESCRIPTION: 'AI-powered content filtering for social media platforms. <a href="https://github.com/jac08h/great_filter" target="_blank" style="color: #3b82f6; text-decoration: underline;">View on GitHub</a>.',
   HOW_IT_WORKS_TITLE: 'How It Works',
   HOW_IT_WORKS: 'The extension extracts visible content of individual posts from web pages and sends it to an LLM along with your topic preferences. The LLM decides whether each piece of content should be displayed. Only content approved by the LLM remains visible.',
   API_TIERS_TITLE: 'API Tiers',
   SUPPORTED_SITES_TITLE: 'Supported Sites',
   SUPPORTED_SITES: 'YouTube, Hacker News, Reddit, and X',
-  CREDITS_TITLE: 'Credits',
-  CREDITS: '<a href="https://jakubhalmes.com/" target="_blank" style="color: #3b82f6; text-decoration: underline;">Jakub Halmeš</a> & Claude via <a href="https://www.anthropic.com/claude-code" target="_blank" style="color: #3b82f6; text-decoration: underline;">Claude Code</a>',
-  CHANGELOG_TITLE: 'Changelog'
+  CHANGELOG_URL: 'https://github.com/jac08h/great_filter/releases'
 };
 
 const API_DESCRIPTIONS = {
@@ -49,23 +47,17 @@ const FEEDBACK_CONTENT = {
   FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLScGn0NmNMZYvo-kDZK5JzdELkQhcS7N16TJUoqN6psUxpfZBA/viewform?usp=header'
 };
 
-const CHANGELOG = {
-  '1.1.0': {
-    title: 'Version 1.1.0',
-    changes: [
-      'UI redesign with light/dark theme support',
-      'Add AI filtering recommendations',
-      'Switch model to google/gemini-2.5-flash-lite-preview-09-2025',
-      'Update filtering prompt',
-      'Update polling intervals',
-      'Add feedback form',
-    ]
-  }
+
+const TITLE_PREFIXES = {
+  PROCESSING: 'Processing:',
+  BLOCKED: 'Blocked:',
+  ALLOWED: 'Allowed:',
 };
 
 class ContentFilterBase {
   constructor() {
     this.processedItems = new Set();
+    this.blockedItems = new Set();
     this.scrollTimeout = null;
     this.currentTopics = null;
     this.isFilteringActive = false;
@@ -82,7 +74,7 @@ class ContentFilterBase {
       container.classList.remove('gf-blocked', 'gf-allowed');
       container.classList.add('gf-waiting');
       container.setAttribute('data-gf-state', 'waiting');
-      container.title = `Processing: ${title}`;
+      container.title = `${TITLE_PREFIXES.PROCESSING} ${title}`;
     }
   }
 
@@ -90,20 +82,40 @@ class ContentFilterBase {
     container.classList.remove('gf-waiting', 'gf-allowed');
     container.classList.add('gf-blocked');
     container.setAttribute('data-gf-state', 'blocked');
-    container.title = `Blocked: ${title}`;
+    container.title = `${TITLE_PREFIXES.BLOCKED} ${title}`;
   }
 
   unblurElement(container) {
     container.classList.remove('gf-waiting', 'gf-blocked');
     container.classList.add('gf-allowed');
     container.setAttribute('data-gf-state', 'allowed');
-    container.title = 'Allowed: Element kept';
+    container.title = `${TITLE_PREFIXES.ALLOWED} Element kept`;
   }
 
-  async processElementsBatch(elements, topics, elementType = 'item') {
+  unhideAll() {
+    const allFilteredElements = document.querySelectorAll('[data-gf-state]');
+    allFilteredElements.forEach(element => {
+      element.classList.remove('gf-waiting', 'gf-blocked', 'gf-allowed');
+      element.removeAttribute('data-gf-state');
+      const title = element.getAttribute('title');
+      if (title && (title.startsWith(TITLE_PREFIXES.PROCESSING) || title.startsWith(TITLE_PREFIXES.BLOCKED) || title.startsWith(TITLE_PREFIXES.ALLOWED))) {
+        element.removeAttribute('title');
+      }
+    });
 
+    this.processedItems.clear();
+    this.blockedItems.clear();
+  }
+
+  async processElements(elements, topics = null) {
     try {
       if (elements.length === 0) {
+        return;
+      }
+
+      const topicsToUse = topics || this.currentTopics;
+      if (!topicsToUse) {
+        console.error('❌ Great Filter: No topics available for filtering');
         return;
       }
 
@@ -112,45 +124,66 @@ class ContentFilterBase {
         this.blurWaitingElement(element.container, element.title);
       });
 
+      chrome.runtime.sendMessage({ action: 'contentProcessing' });
 
-      const response = await chrome.runtime.sendMessage({
-        action: 'checkItemTitlesBatch',
-        items: elements.map((element, index) => ({
-          index: index + 1,
-          title: element.title,
-          container: element.container
-        })),
-        topics: topics
-      });
-
-
-      if (response.error) {
-        if (response.error === 'DAILY_LIMIT_EXCEEDED') {
-          console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
-          this.showDailyLimitMessage(response);
-          this.isFilteringActive = false;
-          chrome.runtime.sendMessage({ action: 'filteringStopped' });
-          return;
-        }
-        console.error(`❌ Great Filter: Error checking ${elementType}s:`, response.error);
-        return;
+      const batches = [];
+      for (let i = 0; i < elements.length; i += CONFIG.MAX_ITEMS_PER_BATCH) {
+        batches.push(elements.slice(i, i + CONFIG.MAX_ITEMS_PER_BATCH));
       }
 
-      response.results.forEach((result, index) => {
-        const element = elements[index];
-        if (result.isAllowed) {
-          this.unblurElement(element.container);
-        } else {
-          this.blurBlockedElement(element.container, element.title);
+      const batchPromises = batches.map(async (batch, batchIndex) => {
+        try {
+          const response = await chrome.runtime.sendMessage({
+            action: 'checkItemTitlesBatch',
+            items: batch.map((element, index) => ({
+              index: index + 1,
+              title: element.title,
+              container: element.container
+            })),
+            topics: topicsToUse
+          });
+
+          if (response.error) {
+            if (response.error === 'DAILY_LIMIT_EXCEEDED') {
+              console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
+              this.showDailyLimitMessage(response);
+              this.isFilteringActive = false;
+              chrome.runtime.sendMessage({ action: 'filteringStopped' });
+              return { error: response.error };
+            }
+            console.error('❌ Great Filter: Error checking items in batch:', response.error);
+            return { error: response.error };
+          }
+
+          response.results.forEach((result, index) => {
+            const element = batch[index];
+            if (result.isAllowed) {
+              this.unblurElement(element.container);
+            } else {
+              this.blurBlockedElement(element.container, element.title);
+              this.blockedItems.add(element.title);
+            }
+          });
+
+          return { success: true };
+        } catch (error) {
+          console.error(`❌ Great Filter: Error processing batch ${batchIndex}:`, error);
+          return { error: error.message };
         }
       });
+
+      await Promise.all(batchPromises);
+
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+
     } catch (error) {
-      console.error(`❌ Great Filter: Error in processElementsBatch for ${elementType}s:`, error);
+      console.error('❌ Great Filter: Error in processElements:', error);
+      chrome.runtime.sendMessage({ action: 'filteringComplete' });
     }
   }
 
 
-  startScrollMonitoring(topics, extractElementsFunction, elementType = 'item') {
+  startScrollMonitoring(topics, extractElementsFunction) {
     this.currentTopics = topics;
     this.extractElementsFunction = extractElementsFunction;
 
@@ -184,6 +217,22 @@ class ContentFilterBase {
   stopFiltering() {
     this.isFilteringActive = false;
     this.stopScrollMonitoring();
+
+    // Remove all filter classes and attributes from filtered content
+    const filteredElements = document.querySelectorAll('[data-gf-state]');
+    filteredElements.forEach(element => {
+      element.classList.remove('gf-waiting', 'gf-blocked', 'gf-allowed');
+      element.removeAttribute('data-gf-state');
+      // Only remove our custom titles
+      const title = element.getAttribute('title');
+      if (title && (title.startsWith(TITLE_PREFIXES.PROCESSING) || title.startsWith(TITLE_PREFIXES.BLOCKED) || title.startsWith(TITLE_PREFIXES.ALLOWED))) {
+        element.removeAttribute('title');
+      }
+    });
+
+    // Clear processed items so they can be reprocessed if filtering is turned back on
+    this.processedItems.clear();
+    this.blockedItems.clear();
   }
 
   waitForElements(extractElementsFunction, callback, maxAttempts = POLLING_INTERVALS.STARTUP_MAX_ATTEMPTS, interval = POLLING_INTERVALS.STARTUP_ELEMENT_CHECK) {
@@ -235,76 +284,38 @@ class ContentFilterBase {
   async pollForNewContent() {
     if (!this.currentTopics || !this.extractElementsFunction) return;
 
-
     const allElements = this.extractElementsFunction();
     const newElements = allElements.filter(element => !this.processedItems.has(element.title));
 
-    if (newElements.length > 0) {
-      await this.processNewElements(newElements);
-    }
-  }
+    const rerenderedElements = allElements.filter(element => {
+      if (!this.processedItems.has(element.title)) return false;
+      return !element.container.hasAttribute('data-gf-state');
+    });
 
-  async processNewElements(newElements) {
-
-    try {
-      newElements.forEach(element => {
-        this.processedItems.add(element.title);
-        this.blurWaitingElement(element.container, element.title);
-      });
-
-      chrome.runtime.sendMessage({
-        action: 'contentProcessing'
-      });
-
-      const response = await chrome.runtime.sendMessage({
-        action: 'checkItemTitlesBatch',
-        items: newElements.map((element, index) => ({
-          index: index + 1,
-          title: element.title,
-          container: element.container
-        })),
-        topics: this.currentTopics
-      });
-
-
-      if (response.error) {
-        if (response.error === 'DAILY_LIMIT_EXCEEDED') {
-          console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
-          this.showDailyLimitMessage(response);
-          this.isFilteringActive = false;
-          chrome.runtime.sendMessage({ action: 'filteringStopped' });
-          return;
-        }
-        console.error('❌ Great Filter: Error checking polling elements:', response.error);
-        chrome.runtime.sendMessage({
-          action: 'filteringComplete'
-        });
-        return;
-      }
-
-      response.results.forEach((result, index) => {
-        const element = newElements[index];
-
-        if (result.isAllowed) {
-          this.unblurElement(element.container);
+    if (rerenderedElements.length > 0) {
+      rerenderedElements.forEach(element => {
+        if (this.blockedItems.has(element.title)) {
+          if (element.itemElements) {
+            this.blurBlockedElement(element);
+          } else {
+            this.blurBlockedElement(element.container, element.title);
+          }
         } else {
-          this.blurBlockedElement(element.container, element.title);
+          if (element.itemElements) {
+            this.unblurElement(element);
+          } else {
+            this.unblurElement(element.container);
+          }
         }
       });
+    }
 
-      chrome.runtime.sendMessage({
-        action: 'filteringComplete'
-      });
-
-    } catch (error) {
-      console.error('❌ Great Filter: Error processing polling elements:', error);
-      chrome.runtime.sendMessage({
-        action: 'filteringComplete'
-      });
+    if (newElements.length > 0) {
+      await this.processElements(newElements);
     }
   }
 
-  async checkFilteringState(processElementsFunction, startScrollMonitoringFunction) {
+  async checkFilteringState() {
     try {
       const result = await chrome.storage.local.get(['allowedTopics', 'filteringEnabled']);
       const topics = result.allowedTopics || [];
@@ -312,28 +323,51 @@ class ContentFilterBase {
 
       if (topics.length > 0 && filteringEnabled) {
         this.isFilteringActive = true;
-        processElementsFunction(topics);
-        startScrollMonitoringFunction(topics);
-      } else {
+        await this.processInitialElements(topics);
+        this.startScrollMonitoring(topics, () => this.extractItemElements());
       }
     } catch (error) {
       console.error('Error checking filtering state:', error);
     }
   }
 
-  setupMessageListener(processElementsFunction, startScrollMonitoringFunction) {
+  async processInitialElements(topics) {
+    const elements = this.extractItemElements();
+    if (elements.length > 0) {
+      await this.processElements(elements, topics);
+    }
+  }
+
+  setupMessageListener() {
     chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
       if (request.action === 'startFiltering') {
         this.isFilteringActive = true;
-        processElementsFunction(request.topics);
-        startScrollMonitoringFunction(request.topics);
-        sendResponse({ success: true });
+        this.processedItems.clear();
+        this.processInitialElements(request.topics).then(() => {
+          this.startScrollMonitoring(request.topics, () => this.extractItemElements());
+          sendResponse({ success: true });
+        });
+        return true;
       }
 
       if (request.action === 'stopFiltering') {
         this.stopFiltering();
         sendResponse({ success: true });
+      }
+
+      if (request.action === 'updatePreferences') {
+        this.unhideAll();
+
+        this.stopScrollMonitoring();
+
+        this.currentTopics = request.topics;
+
+        this.processInitialElements(request.topics).then(() => {
+          this.startScrollMonitoring(request.topics, () => this.extractItemElements());
+          sendResponse({ success: true });
+        });
+        return true;
       }
 
       if (request.action === 'getFilteringState') {
@@ -351,7 +385,6 @@ class ContentFilterBase {
         });
         return true;
       }
-
 
       return true;
     });
@@ -402,10 +435,6 @@ class ContentFilterBase {
 
   async getRecommendedFilter() {
     try {
-      if (this.isFilteringActive) {
-        return { error: 'AI recommendations are only available when filtering is disabled' };
-      }
-
       if (typeof this.extractItemElements !== 'function') {
         console.error('❌ extractItemElements method not available');
         return {};

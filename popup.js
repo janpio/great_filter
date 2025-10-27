@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const apiKeySection = document.getElementById('apiKeySection');
   const apiKeyInput = document.getElementById('apiKey');
   const apiDescription = document.getElementById('apiDescription');
+  const modelSelect = document.getElementById('modelSelect');
+
+  const imageSendingToggle = document.getElementById('imageSendingToggle');
+  const imageSendingOption = document.getElementById('imageSendingOption');
 
   let isFiltering = false;
   let isOnSupportedSite = false;
@@ -38,10 +42,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadSavedTopics();
   loadApiKeySettings();
+  loadModelSettings();
+  loadImageSendingSettings();
   loadTheme();
   checkCurrentFilteringState();
   checkSupportedSite();
   initializeTooltipContent();
+  displayVersion();
 
   let originalTopics = '';
   let currentTopicsArray = [];
@@ -125,6 +132,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   apiKeyInput.addEventListener('input', function() {
     saveApiKeyImmediate();
+  });
+
+  modelSelect.addEventListener('change', function() {
+    handleModelChange();
+  });
+
+  imageSendingToggle.addEventListener('change', function() {
+    handleImageSendingChange();
   });
 
   const feedbackFormLink = document.getElementById('feedbackFormLink');
@@ -219,27 +234,28 @@ document.addEventListener('DOMContentLoaded', function() {
         filteringEnabled: true
       });
 
+      startFiltering();
+
       const tabs = await chrome.tabs.query({active: true, currentWindow: true});
       if (tabs[0]) {
-        await chrome.tabs.sendMessage(tabs[0].id, {
+        chrome.tabs.sendMessage(tabs[0].id, {
           action: 'startFiltering',
           topics: topics
+        }).catch(error => {
+          console.error('Error starting filter:', error);
+          showMessage('Error starting filter. Make sure you are on a supported website.', true);
+          stopFiltering();
         });
 
         chrome.runtime.sendMessage({
           action: 'filteringStarted',
           topics: topics
         });
-
-        startFiltering();
-
-        await chrome.tabs.reload(tabs[0].id);
-
-        showMessage('Filtering started!');
       }
     } catch (error) {
       console.error('Error starting filter:', error);
       showMessage('Error starting filter. Make sure you are on a supported website.', true);
+      stopFiltering();
     }
   }
 
@@ -264,11 +280,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
       showMessage('Topics saved successfully!');
 
-      // Only reload if filtering is currently enabled
+      // Only update preferences if filtering is currently enabled
       if (isFiltering) {
         const tabs = await chrome.tabs.query({active: true, currentWindow: true});
         if (tabs[0]) {
-          await chrome.tabs.reload(tabs[0].id);
+          try {
+            await chrome.tabs.sendMessage(tabs[0].id, {
+              action: 'updatePreferences',
+              topics: topics
+            });
+            showMessage('Filtering updated with new preferences!');
+          } catch (error) {
+            console.error('Error updating preferences:', error);
+            showMessage('Error updating preferences. Please refresh the page.', true);
+          }
         }
       }
 
@@ -333,6 +358,48 @@ document.addEventListener('DOMContentLoaded', function() {
       updateApiDescription();
     } catch (error) {
       console.error('Error loading API key settings:', error);
+    }
+  }
+
+  async function loadImageSendingSettings() {
+    try {
+      const result = await chrome.storage.local.get(['sendImages', 'useOwnApiKey']);
+      const useOwnApiKey = result.useOwnApiKey === true;
+
+      let sendImages = result.sendImages;
+      if (sendImages === undefined) {
+        sendImages = false;
+        await chrome.storage.local.set({ sendImages: false });
+      } else {
+        sendImages = sendImages === true;
+      }
+
+      imageSendingToggle.checked = sendImages;
+      updateImageSendingState();
+    } catch (error) {
+      console.error('Error loading image sending settings:', error);
+    }
+  }
+
+  function updateImageSendingState() {
+    const useOwnApiKey = useOwnApiKeyRadio.checked;
+
+    if (useOwnApiKey) {
+      imageSendingToggle.disabled = false;
+      imageSendingOption.classList.remove('disabled');
+    } else {
+      imageSendingToggle.disabled = true;
+      imageSendingOption.classList.add('disabled');
+    }
+  }
+
+  async function handleImageSendingChange() {
+    try {
+      const sendImages = imageSendingToggle.checked;
+      await chrome.storage.local.set({ sendImages });
+      console.log('Image sending setting updated:', sendImages);
+    } catch (error) {
+      console.error('Error saving image sending setting:', error);
     }
   }
 
@@ -422,8 +489,6 @@ document.addEventListener('DOMContentLoaded', function() {
         chrome.runtime.sendMessage({
           action: 'filteringStopped'
         });
-
-        await chrome.tabs.reload(tabs[0].id);
       }
     } catch (error) {
       console.error('Error stopping filter:', error);
@@ -475,13 +540,71 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function handleApiChoiceChange() {
+  async function loadModelSettings() {
+    try {
+      modelSelect.innerHTML = '';
+
+      CONFIG.AVAILABLE_MODELS.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        modelSelect.appendChild(option);
+      });
+
+      const result = await chrome.storage.local.get(['selectedModel', 'useOwnApiKey']);
+      const selectedModel = result.selectedModel || CONFIG.MODEL;
+      const useOwnApiKey = result.useOwnApiKey === true;
+
+      modelSelect.value = selectedModel;
+      modelSelect.disabled = !useOwnApiKey;
+
+      updateModelSelectState();
+    } catch (error) {
+      console.error('Error loading model settings:', error);
+    }
+  }
+
+  function handleModelChange() {
+    const selectedModel = modelSelect.value;
+    chrome.storage.local.set({
+      selectedModel: selectedModel
+    }).then(() => {
+      console.log('Model updated:', selectedModel);
+    }).catch(error => {
+      console.error('Error updating model:', error);
+    });
+  }
+
+  function updateModelSelectState() {
+    const useOwnApiKey = useOwnApiKeyRadio.checked;
+    const modelSection = document.getElementById('modelSection');
+
+    modelSelect.disabled = !useOwnApiKey;
+
+    if (!useOwnApiKey) {
+      modelSection.classList.add('disabled');
+    } else {
+      modelSection.classList.remove('disabled');
+    }
+  }
+
+  async function handleApiChoiceChange() {
     updateApiKeyVisibility();
     updateApiDescription();
+    updateModelSelectState();
+    updateImageSendingState();
 
     if (useProxyApiRadio.checked) {
       console.log('🔄 Switched to free tier - checking usage...');
       checkUsageAvailability();
+
+      imageSendingToggle.checked = false;
+      modelSelect.value = CONFIG.MODEL;
+      await chrome.storage.local.set({
+        sendImages: false,
+        selectedModel: CONFIG.MODEL
+      });
+      console.log('Image sending disabled and model reset to default due to free tier selection');
     }
 
     chrome.storage.local.set({
@@ -629,6 +752,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  function displayVersion() {
+    const versionNumber = document.getElementById('versionNumber');
+    if (versionNumber) {
+      versionNumber.textContent = `v${CONFIG.VERSION}`;
+      versionNumber.addEventListener('click', function(e) {
+        e.preventDefault();
+        chrome.tabs.create({ url: ABOUT_CONTENT.CHANGELOG_URL });
+      });
+    }
+  }
+
   function initializeTooltipContent() {
     const aboutTitle = document.getElementById('aboutTitle');
     const aboutDescription = document.getElementById('aboutDescription');
@@ -637,10 +771,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const apiTiersTitle = document.getElementById('apiTiersTitle');
     const supportedSitesTitle = document.getElementById('supportedSitesTitle');
     const supportedSites = document.getElementById('supportedSites');
-    const creditsTitle = document.getElementById('creditsTitle');
-    const credits = document.getElementById('credits');
-    const changelogTitle = document.getElementById('changelogTitle');
-    const changelogContent = document.getElementById('changelogContent');
 
     const tooltipFreeTier = document.getElementById('tooltipFreeTier');
     const tooltipFreeTierDesc = document.getElementById('tooltipFreeTierDesc');
@@ -657,7 +787,7 @@ document.addEventListener('DOMContentLoaded', function() {
       aboutTitle.textContent = ABOUT_CONTENT.TITLE;
     }
     if (aboutDescription) {
-      aboutDescription.textContent = ABOUT_CONTENT.DESCRIPTION;
+      aboutDescription.innerHTML = ABOUT_CONTENT.DESCRIPTION;
     }
     if (howItWorksTitle) {
       howItWorksTitle.textContent = ABOUT_CONTENT.HOW_IT_WORKS_TITLE;
@@ -673,28 +803,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (supportedSites) {
       supportedSites.textContent = ABOUT_CONTENT.SUPPORTED_SITES;
-    }
-    if (creditsTitle) {
-      creditsTitle.textContent = ABOUT_CONTENT.CREDITS_TITLE;
-    }
-    if (credits) {
-      credits.innerHTML = ABOUT_CONTENT.CREDITS;
-    }
-    if (changelogTitle) {
-      changelogTitle.textContent = ABOUT_CONTENT.CHANGELOG_TITLE;
-    }
-    if (changelogContent) {
-      let changelogHtml = '';
-      for (const [version, data] of Object.entries(CHANGELOG)) {
-        changelogHtml += `<div class="changelog-version">`;
-        changelogHtml += `<h4>${data.title}</h4>`;
-        changelogHtml += `<ul>`;
-        data.changes.forEach(change => {
-          changelogHtml += `<li>${change}</li>`;
-        });
-        changelogHtml += `</ul></div>`;
-      }
-      changelogContent.innerHTML = changelogHtml;
     }
 
     if (tooltipFreeTier) {
