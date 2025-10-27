@@ -331,14 +331,14 @@ async function handleRecommendedFilter(items, sendResponse) {
     console.log('Recommendation prompt:\n', prompt);
 
     const requestBody = {
-      model: apiConfig.model,
+      model: CONFIG.RECOMMENDATION_MODEL,
       messages: [
         {
           role: 'user',
           content: prompt
         }
       ],
-      max_tokens: 200,
+      max_tokens: 300,
       temperature: 1
     };
 
