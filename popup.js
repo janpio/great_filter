@@ -1,4 +1,9 @@
 // Constants are now imported from shared/content-base.js
+const storageGet = (...args) => window.GFBrowser.storageGet(...args);
+const storageSet = (...args) => window.GFBrowser.storageSet(...args);
+const tabsQuery = (...args) => window.GFBrowser.tabsQuery(...args);
+const tabsSendMessage = (...args) => window.GFBrowser.tabsSendMessage(...args);
+const runtimeSendMessage = (...args) => window.GFBrowser.runtimeSendMessage(...args);
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('🚀 Popup script loaded!');
@@ -197,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function loadTheme() {
     try {
-      const result = await chrome.storage.local.get(['darkMode']);
+      const result = await storageGet(['darkMode']);
       const darkMode = result.darkMode === true;
       if (darkMode) {
         document.body.classList.add('dark');
@@ -214,14 +219,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const isDark = document.body.classList.toggle('dark');
     themeToggle.textContent = isDark ? '☀️' : '🌙';
     try {
-      await chrome.storage.local.set({ darkMode: isDark });
+      await storageSet({ darkMode: isDark });
     } catch (error) {
       console.error('Error saving theme:', error);
     }
   }
 
   async function startFilteringAction() {
-    const result = await chrome.storage.local.get(['allowedTopics']);
+    const result = await storageGet(['allowedTopics']);
     const topics = result.allowedTopics || [];
 
     if (topics.length === 0) {
@@ -230,27 +235,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     try {
-      await chrome.storage.local.set({
+      await storageSet({
         filteringEnabled: true
       });
 
       startFiltering();
 
-      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          action: 'startFiltering',
-          topics: topics
-        }).catch(error => {
+      const tabs = await tabsQuery({active: true, currentWindow: true});
+      if (tabs?.[0]) {
+        try {
+          await tabsSendMessage(tabs[0].id, {
+            action: 'startFiltering',
+            topics: topics
+          });
+        } catch (error) {
           console.error('Error starting filter:', error);
           showMessage('Error starting filter. Make sure you are on a supported website.', true);
           stopFiltering();
-        });
+          return;
+        }
 
-        chrome.runtime.sendMessage({
+        runtimeSendMessage({
           action: 'filteringStarted',
           topics: topics
-        });
+        }).catch(() => {});
       }
     } catch (error) {
       console.error('Error starting filter:', error);
@@ -269,38 +277,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     try {
-      await chrome.storage.local.set({
-        allowedTopics: topics
-      });
+      console.log('💾 Saving topics:', topics);
+      await setAllowedTopics(topics);
+      // Verify save worked
+      const verification = await getAllowedTopics();
+      console.log('✅ Topics saved and verified:', verification);
 
       originalTopics = topicsText;
       currentTopicsArray = topics;
       exitTopicsEditMode();
       updateTopicsDisplay();
-
-      showMessage('Topics saved successfully!');
-
-      // Only update preferences if filtering is currently enabled
+      showMessage('Topics saved!', false);
+      // Ensure active pages pick up the new topics without a manual toggle
       if (isFiltering) {
-        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-        if (tabs[0]) {
+        const tabs = await tabsQuery({active: true, currentWindow: true});
+        if (tabs?.[0]) {
           try {
-            await chrome.tabs.sendMessage(tabs[0].id, {
+            await tabsSendMessage(tabs[0].id, {
               action: 'updatePreferences',
-              topics: topics
+              topics
             });
-            showMessage('Filtering updated with new preferences!');
+            showMessage('Filtering updated with new topics!');
           } catch (error) {
             console.error('Error updating preferences:', error);
-            showMessage('Error updating preferences. Please refresh the page.', true);
+            showMessage('Error updating active tab. Please refresh the page.', true);
           }
         }
       }
-
-      console.log('Topics saved:', topics);
     } catch (error) {
       console.error('Error saving topics:', error);
-      showMessage('Error saving topics: ' + error.message, true);
+      showMessage('Error saving topics', true);
     }
   }
 
@@ -309,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const useOwnApiKey = useOwnApiKeyRadio.checked;
 
     try {
-      await chrome.storage.local.set({
+      await storageSet({
         apiKey: apiKey
       });
 
@@ -321,15 +327,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function loadSavedTopics() {
     try {
-      const result = await chrome.storage.local.get(['allowedTopics']);
-      if (result.allowedTopics && result.allowedTopics.length > 0) {
-        currentTopicsArray = result.allowedTopics;
-        const topicsText = result.allowedTopics.join('\n');
+      const topics = await getAllowedTopics();
+      console.log('📖 Loading topics, result:', topics);
+      if (topics && topics.length > 0) {
+        console.log('✅ Topics loaded:', topics);
+        currentTopicsArray = topics;
+        const topicsText = topics.join('\n');
         topicsTextarea.value = topicsText;
         originalTopics = topicsText;
         updateTopicsDisplay();
         autoResizeTextarea();
       } else {
+        console.log('⚠️ No topics found in storage');
         currentTopicsArray = [];
         updateTopicsDisplay();
       }
@@ -341,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function loadApiKeySettings() {
     try {
-      const result = await chrome.storage.local.get(['useOwnApiKey', 'apiKey']);
+      const result = await storageGet(['useOwnApiKey', 'apiKey']);
       const useOwnApiKey = result.useOwnApiKey === true;
       const apiKey = result.apiKey || '';
 
@@ -363,13 +372,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function loadImageSendingSettings() {
     try {
-      const result = await chrome.storage.local.get(['sendImages', 'useOwnApiKey']);
+      const result = await storageGet(['sendImages', 'useOwnApiKey']);
       const useOwnApiKey = result.useOwnApiKey === true;
 
       let sendImages = result.sendImages;
       if (sendImages === undefined) {
         sendImages = false;
-        await chrome.storage.local.set({ sendImages: false });
+        await storageSet({ sendImages: false });
       } else {
         sendImages = sendImages === true;
       }
@@ -396,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function handleImageSendingChange() {
     try {
       const sendImages = imageSendingToggle.checked;
-      await chrome.storage.local.set({ sendImages });
+      await storageSet({ sendImages });
       console.log('Image sending setting updated:', sendImages);
     } catch (error) {
       console.error('Error saving image sending setting:', error);
@@ -405,15 +414,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function checkCurrentFilteringState() {
     try {
-      const result = await chrome.storage.local.get(['filteringEnabled', 'allowedTopics']);
+      const result = await storageGet(['filteringEnabled', 'allowedTopics']);
       const filteringEnabled = result.filteringEnabled === true;
       const topics = result.allowedTopics || [];
 
       if (filteringEnabled && topics.length > 0) {
-        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-        if (tabs[0]) {
+        const tabs = await tabsQuery({active: true, currentWindow: true});
+        if (tabs?.[0]) {
           try {
-            const response = await chrome.tabs.sendMessage(tabs[0].id, {
+            const response = await tabsSendMessage(tabs[0].id, {
               action: 'getFilteringState'
             });
 
@@ -442,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function updateToggleState() {
     try {
-      const result = await chrome.storage.local.get(['allowedTopics', 'filteringEnabled']);
+      const result = await storageGet(['allowedTopics', 'filteringEnabled']);
       const topics = result.allowedTopics || [];
       const filteringEnabled = result.filteringEnabled === true;
 
@@ -476,19 +485,19 @@ document.addEventListener('DOMContentLoaded', function() {
     updateMainToggleState();
 
     try {
-      await chrome.storage.local.set({
+      await storageSet({
         filteringEnabled: false
       });
 
-      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-      if (tabs[0]) {
-        await chrome.tabs.sendMessage(tabs[0].id, {
+      const tabs = await tabsQuery({active: true, currentWindow: true});
+      if (tabs?.[0]) {
+        await tabsSendMessage(tabs[0].id, {
           action: 'stopFiltering'
         });
 
-        chrome.runtime.sendMessage({
+        runtimeSendMessage({
           action: 'filteringStopped'
-        });
+        }).catch(() => {});
       }
     } catch (error) {
       console.error('Error stopping filter:', error);
@@ -551,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modelSelect.appendChild(option);
       });
 
-      const result = await chrome.storage.local.get(['selectedModel', 'useOwnApiKey']);
+      const result = await storageGet(['selectedModel', 'useOwnApiKey']);
       const selectedModel = result.selectedModel || CONFIG.MODEL;
       const useOwnApiKey = result.useOwnApiKey === true;
 
@@ -564,15 +573,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function handleModelChange() {
+  async function handleModelChange() {
     const selectedModel = modelSelect.value;
-    chrome.storage.local.set({
-      selectedModel: selectedModel
-    }).then(() => {
+    try {
+      await storageSet({
+        selectedModel: selectedModel
+      });
       console.log('Model updated:', selectedModel);
-    }).catch(error => {
+    } catch (error) {
       console.error('Error updating model:', error);
-    });
+    }
   }
 
   function updateModelSelectState() {
@@ -600,22 +610,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
       imageSendingToggle.checked = false;
       modelSelect.value = CONFIG.MODEL;
-      await chrome.storage.local.set({
-        sendImages: false,
-        selectedModel: CONFIG.MODEL
-      });
+      try {
+        await storageSet({
+          sendImages: false,
+          selectedModel: CONFIG.MODEL
+        });
+      } catch (error) {
+        console.error('Error resetting proxy settings:', error);
+      }
       console.log('Image sending disabled and model reset to default due to free tier selection');
     }
 
-    chrome.storage.local.set({
-      useOwnApiKey: useOwnApiKeyRadio.checked
-    }).then(() => {
+    try {
+      await storageSet({
+        useOwnApiKey: useOwnApiKeyRadio.checked
+      });
       console.log('API choice updated:', useOwnApiKeyRadio.checked ? 'own' : 'proxy');
-    }).catch(error => {
+    } catch (error) {
       console.error('Error updating API choice:', error);
-    });
+    }
   }
-
   function updateApiDescription() {
     console.log('🎨 updateApiDescription called - useOwnApiKey:', useOwnApiKeyRadio.checked, 'usageInfo:', usageInfo);
 
@@ -658,10 +672,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function checkSupportedSite() {
     try {
-      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-      if (tabs[0]) {
+      const tabs = await tabsQuery({active: true, currentWindow: true});
+      if (tabs?.[0]) {
         const url = tabs[0].url;
         isOnSupportedSite = isSupportedWebsite(url);
+        updateMainToggleState();
+      } else {
+        isOnSupportedSite = false;
         updateMainToggleState();
       }
     } catch (error) {
@@ -694,15 +711,15 @@ document.addEventListener('DOMContentLoaded', function() {
       recommendBtn.disabled = true;
       recommendBtn.textContent = '⏳';
 
-      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-      if (!tabs[0]) {
+      const tabs = await tabsQuery({active: true, currentWindow: true});
+      if (!tabs?.[0]) {
         showMessage('No active tab found', true);
         recommendBtn.disabled = false;
         recommendBtn.textContent = '💡';
         return;
       }
 
-      const response = await chrome.tabs.sendMessage(tabs[0].id, {
+      const response = await tabsSendMessage(tabs[0].id, {
         action: 'getRecommendedFilter'
       });
 
@@ -853,3 +870,27 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
 });
+
+async function setAllowedTopics(topics) {
+  try {
+    await storageSet({ allowedTopics: topics });
+  } catch (error) {
+    console.error('Error saving topics to storage, falling back to localStorage:', error);
+    localStorage.setItem('allowedTopics', JSON.stringify(topics));
+  }
+}
+
+async function getAllowedTopics() {
+  try {
+    const result = await storageGet(['allowedTopics']);
+    if (result.allowedTopics) {
+      return result.allowedTopics;
+    }
+  } catch (error) {
+    const raw = localStorage.getItem('allowedTopics');
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  }
+  return [];
+}

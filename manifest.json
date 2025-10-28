@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Great Filter",
-  "version": "2.0",
+  "version": "2.1",
   "description": "AI-powered content filtering for Youtube, Reddit, X, and HackerNews",
   "icons": {
     "16": "icons/icon16.png",
@@ -13,34 +13,80 @@
     "default_popup": "popup.html",
     "default_title": "Great Filter"
   },
-  "permissions": ["storage", "tabs", "activeTab"],
-  "host_permissions": ["https://*.vercel.app/*", "https://openrouter.ai/*", "https://www.youtube.com/*","https://news.ycombinator.com/*", "https://*.reddit.com/*", "https://x.com/*"],
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://*.vercel.app/*",
+    "https://openrouter.ai/*",
+    "https://www.youtube.com/*",
+    "https://news.ycombinator.com/*",
+    "https://*.reddit.com/*",
+    "https://x.com/*"
+  ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": [
+      "browser-polyfill.js",
+      "shared/browser-api.js",
+      "config.js",
+      "shared/prompts.js",
+      "background.js"
+    ]
   },
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
-      "js": ["config.js", "shared/content-base.js", "shared/prompts.js", "content-scripts/youtube.js"],
+      "js": [
+        "browser-polyfill.js",
+        "shared/browser-api.js",
+        "config.js",
+        "shared/content-base.js",
+        "shared/prompts.js",
+        "content-scripts/youtube.js"
+      ],
       "css": ["shared/filter-styles.css"],
       "run_at": "document_end"
     },
     {
       "matches": ["https://news.ycombinator.com/*"],
       "exclude_matches": ["https://news.ycombinator.com/item*"],
-      "js": ["config.js", "shared/content-base.js", "shared/prompts.js", "content-scripts/hackernews.js"],
+      "js": [
+        "browser-polyfill.js",
+        "shared/browser-api.js",
+        "config.js",
+        "shared/content-base.js",
+        "shared/prompts.js",
+        "content-scripts/hackernews.js"
+      ],
       "css": ["shared/filter-styles.css"],
       "run_at": "document_end"
     },
     {
       "matches": ["https://*.reddit.com/*"],
-      "js": ["config.js", "shared/content-base.js", "shared/prompts.js", "content-scripts/reddit.js"],
+      "js": [
+        "browser-polyfill.js",
+        "shared/browser-api.js",
+        "config.js",
+        "shared/content-base.js",
+        "shared/prompts.js",
+        "content-scripts/reddit.js"
+      ],
       "css": ["shared/filter-styles.css"],
       "run_at": "document_end"
     },
     {
       "matches": ["https://x.com/*"],
-      "js": ["config.js", "shared/content-base.js", "shared/prompts.js", "content-scripts/x.js"],
+      "js": [
+        "browser-polyfill.js",
+        "shared/browser-api.js",
+        "config.js",
+        "shared/content-base.js",
+        "shared/prompts.js",
+        "content-scripts/x.js"
+      ],
       "css": ["shared/filter-styles.css"],
       "run_at": "document_end"
     }
@@ -50,5 +96,11 @@
       "resources": ["config.js"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "great-filter@example.com",
+      "strict_min_version": "109.0"
+    }
+  }
 }

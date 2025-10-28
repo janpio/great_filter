@@ -1,5 +1,5 @@
 const CONFIG = {
-  VERSION: "2.0",
+  VERSION: "2.1",
   PROXY_URL: "https://great-filter-vps.vercel.app/api/proxy",
   OPENROUTER_API_URL: "https://openrouter.ai/api/v1/chat/completions",
   MODEL: "google/gemma-3-12b-it",
