@@ -1,6 +1,20 @@
+// Note: For Firefox compatibility, config.js and prompts.js are loaded via manifest.json
+// In Chrome (service worker), these would be loaded via importScripts()
+// The scripts are included in the background.scripts array in manifest.firefox.json
 
-importScripts('config.js');
-importScripts('shared/prompts.js');
+if (typeof importScripts === 'function') {
+  importScripts(
+    'browser-polyfill.js',
+    'shared/browser-api.js',
+    'config.js',
+    'shared/prompts.js'
+  );
+}
+
+const storageGet = (...args) => GFBrowser.storageGet(...args);
+const storageSet = (...args) => GFBrowser.storageSet(...args);
+const tabsQuery = (...args) => GFBrowser.tabsQuery(...args);
+const runtimeSendMessage = (...args) => GFBrowser.runtimeSendMessage(...args);
 
 const POLLING_INTERVALS = {
   STARTUP_ELEMENT_CHECK: 500,           // How often to check for elements during page load (ms)
@@ -35,10 +49,10 @@ initializeGlobalApiCounter();
 
 async function getApiConfiguration() {
   try {
-    const result = await chrome.storage.local.get(['useOwnApiKey', 'apiKey', 'selectedModel']);
-    const useOwnApiKey = result.useOwnApiKey === true;
-    const apiKey = result.apiKey || '';
-    const model = result.selectedModel || CONFIG.MODEL;
+    const result = await storageGet(['useOwnApiKey', 'apiKey', 'selectedModel']) || {};
+    const useOwnApiKey = result && result.useOwnApiKey === true;
+    const apiKey = (result && result.apiKey) || '';
+    const model = (result && result.selectedModel) || CONFIG.MODEL;
 
     return {
       useOwnApiKey,
@@ -68,8 +82,8 @@ async function getApiConfiguration() {
 
 async function initializeGlobalApiCounter() {
   try {
-    const result = await chrome.storage.local.get(['globalApiRequestCount']);
-    globalApiRequestCount = result.globalApiRequestCount || 0;
+    const result = await storageGet(['globalApiRequestCount']) || {};
+    globalApiRequestCount = (result && result.globalApiRequestCount) || 0;
   } catch (error) {
     console.error('Error initializing global API counter:', error);
     globalApiRequestCount = 0;
@@ -80,7 +94,7 @@ async function initializeGlobalApiCounter() {
 async function incrementGlobalApiCounter(postCount = 1) {
   globalApiRequestCount += postCount;
   try {
-    await chrome.storage.local.set({ globalApiRequestCount });
+    await storageSet({ globalApiRequestCount });
   } catch (error) {
     console.error('Error saving global API counter:', error);
   }
@@ -89,8 +103,8 @@ async function incrementGlobalApiCounter(postCount = 1) {
 
 async function getCurrentTabId() {
   try {
-    const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-    return tabs[0]?.id;
+    const tabs = await tabsQuery({active: true, currentWindow: true});
+    return (tabs && tabs.length > 0) ? tabs[0]?.id : null;
   } catch (error) {
     console.error('Error getting current tab ID:', error);
     return null;
@@ -124,7 +138,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         tabFilteringStates.set(tabId, 'processing');
       }
     });
-    chrome.runtime.sendMessage(request).catch(() => {
+    runtimeSendMessage(request).catch(() => {
     });
     return true;
   }
@@ -193,8 +207,8 @@ async function handleBatchItemTitleCheck(items, topics, sendResponse) {
       throw new Error('No preferences configured');
     }
 
-    const settingsResult = await chrome.storage.local.get(['sendImages']);
-    const sendImages = settingsResult.sendImages === true;
+    const settingsResult = await storageGet(['sendImages']) || {};
+    const sendImages = settingsResult && settingsResult.sendImages === true;
 
     const prompt = PromptTemplates.createBatchPrompt(items, topics, sendImages);
 

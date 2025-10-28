@@ -1,4 +1,6 @@
 
+const runtimeSendMessage = (...args) => GFBrowser.runtimeSendMessage(...args);
+
 class HackerNewsContentFilter extends ContentFilterBase {
   constructor() {
     super();
@@ -133,12 +135,14 @@ class HackerNewsContentFilter extends ContentFilterBase {
         return;
       }
 
+      console.log(`Great Filter (Hacker News): Processing ${elements.length} items.`);
+
       elements.forEach(element => {
         this.processedItems.add(element.title);
         this.blurWaitingElement(element);
       });
 
-      chrome.runtime.sendMessage({ action: 'contentProcessing' });
+      runtimeSendMessage({ action: 'contentProcessing' }).catch(() => {});
 
       const batches = [];
       for (let i = 0; i < elements.length; i += CONFIG.MAX_ITEMS_PER_BATCH) {
@@ -147,12 +151,11 @@ class HackerNewsContentFilter extends ContentFilterBase {
 
       const batchPromises = batches.map(async (batch, batchIndex) => {
         try {
-          const response = await chrome.runtime.sendMessage({
+          const response = await runtimeSendMessage({
             action: 'checkItemTitlesBatch',
             items: batch.map((element, index) => ({
               index: index + 1,
-              title: element.title,
-              container: element.container
+              title: element.title
             })),
             topics: topicsToUse
           });
@@ -162,7 +165,7 @@ class HackerNewsContentFilter extends ContentFilterBase {
               console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
               this.showDailyLimitMessage(response);
               this.isFilteringActive = false;
-              chrome.runtime.sendMessage({ action: 'filteringStopped' });
+              runtimeSendMessage({ action: 'filteringStopped' }).catch(() => {});
               return { error: response.error };
             }
             console.error('❌ Great Filter: Error checking items in batch:', response.error);
@@ -188,11 +191,11 @@ class HackerNewsContentFilter extends ContentFilterBase {
 
       await Promise.all(batchPromises);
 
-      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+      runtimeSendMessage({ action: 'filteringComplete' }).catch(() => {});
 
     } catch (error) {
       console.error('❌ Great Filter: Error in processElements:', error);
-      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+      runtimeSendMessage({ action: 'filteringComplete' }).catch(() => {});
     }
   }
 

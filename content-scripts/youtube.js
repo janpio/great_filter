@@ -80,6 +80,13 @@ class YouTubeContentFilter extends ContentFilterBase {
     return itemElements;
   }
 
+  async processElements(elements, topics = null) {
+    if (elements.length > 0) {
+      console.log(`Great Filter (YouTube): Processing ${elements.length} items.`);
+    }
+    await super.processElements(elements, topics);
+  }
+
   init() {
     this.setupMessageListener();
 

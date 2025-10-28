@@ -6,13 +6,19 @@ AI-powered content filtering for social media platforms.
 
 ## Development
 
-Clone the repository and load as unpacked extension in Chrome:
+### Chrome Development
 
-```bash
-git clone <repo-url>
-cd great_filter
-# Load unpacked extension from chrome://extensions/
-```
+1. Clone the repository.
+2. Load the unpacked extension directly from the repository via `chrome://extensions/`.
+
+### Firefox Development
+
+1. Clone the repository.
+2. Load the temporary add-on directly from the repository via `about:debugging#/runtime/this-firefox`.
+
+### Switching Between Browsers
+
+Load the same project directory in either browser; Firefox consumes the legacy background scripts entry while Chrome uses the service worker.
 
 ## Privacy
 
