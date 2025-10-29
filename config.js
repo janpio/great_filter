@@ -14,3 +14,7 @@ const CONFIG = {
     "google/gemini-2.5-flash",
   ],
 };
+
+if (typeof globalThis !== "undefined") {
+  globalThis.CONFIG = CONFIG;
+}
