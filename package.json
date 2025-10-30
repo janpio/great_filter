@@ -1,7 +1,7 @@
 {
   "name": "great-filter-extension",
   "version": "1.0.0",
-  "description": "Chrome extension for AI-powered content filtering",
+  "description": "Browser extension for AI-powered content filtering",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch --verbose",

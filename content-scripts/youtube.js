@@ -80,6 +80,14 @@ class YouTubeContentFilter extends ContentFilterBase {
     return itemElements;
   }
 
+  // Emit a domain-specific log before delegating to the shared processor for easier debugging.
+  async processElements(elements, topics = null) {
+    if (elements.length > 0) {
+      console.log(`Great Filter (YouTube): Processing ${elements.length} items.`);
+    }
+    await super.processElements(elements, topics);
+  }
+
   init() {
     this.setupMessageListener();
 
