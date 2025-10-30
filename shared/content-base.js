@@ -54,6 +54,9 @@ const TITLE_PREFIXES = {
   ALLOWED: 'Allowed:',
 };
 
+const gfStorageGet = (...args) => GFBrowser.storageGet(...args);
+const gfRuntimeSendMessage = (...args) => GFBrowser.runtimeSendMessage(...args);
+
 class ContentFilterBase {
   constructor() {
     this.processedItems = new Set();
@@ -124,7 +127,7 @@ class ContentFilterBase {
         this.blurWaitingElement(element.container, element.title);
       });
 
-      chrome.runtime.sendMessage({ action: 'contentProcessing' });
+      gfRuntimeSendMessage({ action: 'contentProcessing' }).catch(() => {});
 
       const batches = [];
       for (let i = 0; i < elements.length; i += CONFIG.MAX_ITEMS_PER_BATCH) {
@@ -133,12 +136,11 @@ class ContentFilterBase {
 
       const batchPromises = batches.map(async (batch, batchIndex) => {
         try {
-          const response = await chrome.runtime.sendMessage({
+          const response = await gfRuntimeSendMessage({
             action: 'checkItemTitlesBatch',
             items: batch.map((element, index) => ({
               index: index + 1,
-              title: element.title,
-              container: element.container
+              title: element.title
             })),
             topics: topicsToUse
           });
@@ -148,7 +150,7 @@ class ContentFilterBase {
               console.warn('🚫 Great Filter: Daily limit exceeded:', response.message);
               this.showDailyLimitMessage(response);
               this.isFilteringActive = false;
-              chrome.runtime.sendMessage({ action: 'filteringStopped' });
+              gfRuntimeSendMessage({ action: 'filteringStopped' }).catch(() => {});
               return { error: response.error };
             }
             console.error('❌ Great Filter: Error checking items in batch:', response.error);
@@ -174,11 +176,11 @@ class ContentFilterBase {
 
       await Promise.all(batchPromises);
 
-      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+      gfRuntimeSendMessage({ action: 'filteringComplete' }).catch(() => {});
 
     } catch (error) {
       console.error('❌ Great Filter: Error in processElements:', error);
-      chrome.runtime.sendMessage({ action: 'filteringComplete' });
+      gfRuntimeSendMessage({ action: 'filteringComplete' }).catch(() => {});
     }
   }
 
@@ -317,7 +319,7 @@ class ContentFilterBase {
 
   async checkFilteringState() {
     try {
-      const result = await chrome.storage.local.get(['allowedTopics', 'filteringEnabled']);
+      const result = await gfStorageGet(['allowedTopics', 'filteringEnabled']);
       const topics = result.allowedTopics || [];
       const filteringEnabled = result.filteringEnabled === true;
 
@@ -454,7 +456,7 @@ class ContentFilterBase {
         title: element.title
       }));
 
-      const response = await chrome.runtime.sendMessage({
+      const response = await gfRuntimeSendMessage({
         action: 'getRecommendedFilter',
         items: items
       });
