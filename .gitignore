@@ -4,8 +4,11 @@ config.js
 # Build output
 dist/
 
-# Node modules (if you add them later)
 node_modules/
+
+.playwright/
+playwright-report/
+test-results/
 
 # OS files
 .DS_Store
@@ -18,4 +21,5 @@ CLAUDE.md
 misc/
 
 TODO.md
+
 .vscode/

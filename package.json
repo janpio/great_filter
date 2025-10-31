@@ -8,9 +8,14 @@
     "test:coverage": "jest --coverage",
     "syntax-check": "node --check *.js && node --check shared/*.js && node --check content-scripts/*.js",
     "lint": "eslint *.js shared/*.js content-scripts/*.js",
-    "lint:fix": "eslint *.js shared/*.js content-scripts/*.js --fix"
+    "lint:fix": "eslint *.js shared/*.js content-scripts/*.js --fix",
+    "test:e2e": "playwright test",
+    "test:smoke": "cross-env GF_USE_LIVE=1 playwright test",
+    "test:smoke:trace": "cross-env GF_USE_LIVE=1 playwright test --trace on"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "cross-env": "^7.0.3",
     "eslint": "^9.31.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"
